@@ -35,11 +35,11 @@ export default function ProfilePage() {
 
         <div className="hidden lg:flex items-center gap-14">
           <Link href="/" className="text-sm font-medium text-[#b06aee] transition-colors">Beranda</Link>
-          <Link href="#" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Tentang</Link>
-          <Link href="#" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Layanan</Link>
-          <Link href="#" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Lacak Paket</Link>
-          <Link href="#" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Cek Biaya</Link>
-          <Link href="#" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Kontak</Link>
+          <Link href="#tentang" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Tentang</Link>
+          <Link href="#layanan" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Layanan</Link>
+          <Link href="#lacak-paket" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Lacak Paket</Link>
+          <Link href="#cek-biaya" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Cek Biaya</Link>
+          <Link href="#kontak" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Kontak</Link>
         </div>
 
         <Link href="/login" className="flex items-center gap-2 px-5 py-2 mr-10 bg-[#a35de9] hover:bg-[#8643c7] transition-all text-sm font-semibold rounded shadow-[0_0_15px_rgba(163,93,233,0.3)]">
@@ -90,7 +90,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <section className="max-w-6xl mx-auto px-6 w-full mb-32">
+        <section id="tentang" className="max-w-6xl mx-auto px-6 w-full mb-32">
           <div className="text-center mb-16">
             <h3 className="text-2xl md:text-3xl font-bold mb-4 tracking-wide">Tentang Kami</h3>
             <p className="text-sm md:text-base text-gray-400 max-w-2xl mx-auto leading-relaxed">
@@ -136,7 +136,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <section className="w-full bg-[#13161f] py-24">
+        <section id="layanan" className="w-full bg-[#13161f] py-24">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-16">
               <h3 className="text-2xl md:text-3xl font-bold mb-4 tracking-wide">Layanan Kami</h3>
@@ -202,7 +202,7 @@ export default function ProfilePage() {
         </section>
       </main>
 
-      <footer className="w-full bg-[#0d1117] pt-16 pb-8 px-8 border-t border-white/5">
+      <footer id="kontak" className="w-full bg-[#0d1117] pt-16 pb-8 px-8 border-t border-white/5">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="md:col-span-1">
             <div className="flex items-center gap-3 mb-6">
