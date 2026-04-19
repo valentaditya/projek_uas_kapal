@@ -5,7 +5,6 @@ import {
   CurrencyDollarIcon,
   ClockIcon,
   ArrowTrendingUpIcon,
-  CubeSolidIcon,
   CubeIcon,
 } from '@heroicons/react/24/outline'; 
 
