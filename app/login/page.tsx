@@ -2,9 +2,10 @@
 
 import React, {useState} from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Swal from 'sweetalert2';
-import { UserIcon, LockClosedIcon, EnvelopeIcon, PhoneIcon, EyeIcon, EyeSlashIcon} from '@heroicons/react/24/outline';
+import { UserIcon, LockClosedIcon, EnvelopeIcon, PhoneIcon, EyeIcon, EyeSlashIcon, ArrowLeftIcon} from '@heroicons/react/24/outline';
 import { createClient } from '../../utils/supabase/client';
 
 
@@ -63,7 +64,11 @@ export default function LoginPage() {
         icon: "success",
         title: "Signed in successfully"
       });
-      router.push('/dashboard');
+      if (email && email.endsWith('@adminnav.com')) {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     }
   };
 
@@ -86,7 +91,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Tampilkan loading
     Swal.fire({
       title: 'Mendaftarkan...',
       allowOutsideClick: false,
@@ -127,7 +131,6 @@ export default function LoginPage() {
       theme: "auto"
     });
     
-    // Hapus isi form setelah berhasil daftar
     e.currentTarget.reset();
     setActiveTab('login');
   };
@@ -136,6 +139,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#0e0a1c] bg-radial flex flex-col items-center justify-center relative overflow-hidden" 
          style={{ background: 'radial-gradient(circle at center, #1b1236 0%, #0a0614 100%)' }}>
     
+      <div className="w-full max-w-[400px] mb-4 z-10">
+        <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-sm font-medium font-mono">
+          <ArrowLeftIcon className="w-4 h-4" />
+          Kembali ke Beranda
+        </Link>
+      </div>
+
       <div className="w-full max-w-[400px] bg-[#12111d] rounded-xl border-t border-purple-500/30 border-b border-b-cyan-500/20 shadow-[0_0_40px_-10px_rgba(168,85,247,0.15)] overflow-hidden relative z-10" style={{ boxShadow: '0 0 30px 10px rgba(100, 50, 200, 0.1), inset 0 0 15px rgba(255,255,255,0.02)' }}>
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-50"></div>
         
