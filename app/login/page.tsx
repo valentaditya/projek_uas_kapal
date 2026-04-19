@@ -1,49 +1,135 @@
 "use client";
 
-import React from 'react';
+import React, {useState} from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Swal from 'sweetalert2';
+import { UserIcon, LockClosedIcon, EnvelopeIcon, PhoneIcon, EyeIcon, EyeSlashIcon} from '@heroicons/react/24/outline';
+import { createClient } from '../../utils/supabase/client';
 
 
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const handleLogin = (login: React.FormEvent<HTMLFormElement>) => {
-    login.preventDefault();
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRePassword, setShowRePassword] = useState(false);
 
-    const username = (login.currentTarget.elements.namedItem('username') as HTMLInputElement)?.value;
-    const password = (login.currentTarget.elements.namedItem('password') as HTMLInputElement)?.value;
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-    if (username === "Valent" && password === "Valent" || username === "Laurent" && password === "Laurent" || username === "Samuel" && password === "Samuel") {
-      Swal.mixin({
-      toast: true,
-      position: "top-end",
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true,
-      theme: 'auto',
-      didOpen: (toast) => {
-        toast.onmouseenter = Swal.stopTimer;
-        toast.onmouseleave = Swal.resumeTimer;
+    const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value;
+    const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement)?.value;
+
+    Swal.fire({
+      title: 'Sedang memproses...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
       }
-    }).fire({
-      icon: "success",
-      title: "Signed in successfully"
     });
-    router.push('/dashboard');
-    }
-    else {
+
+    const supabase = createClient();
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
       Swal.fire({
         position: "center",
         icon: "error",
-        title: "Username atau Password salah",
+        title: "Login Gagal",
+        text: "Username atau Password anda salah",
         showConfirmButton: false,
         timer: 2000,
         theme: 'auto'
       });
+    } else {
+      Swal.mixin({
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        theme: 'auto',
+        didOpen: (toast) => {
+          toast.onmouseenter = Swal.stopTimer;
+          toast.onmouseleave = Swal.resumeTimer;
+        }
+      }).fire({
+        icon: "success",
+        title: "Signed in successfully"
+      });
+      router.push('/dashboard');
     }
+  };
+
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    const username = (e.currentTarget.elements.namedItem('username_reg') as HTMLInputElement)?.value;
+    const email = (e.currentTarget.elements.namedItem('email_reg') as HTMLInputElement)?.value;
+    const phone = (e.currentTarget.elements.namedItem('reg_telepon') as HTMLInputElement)?.value;
+    const password = (e.currentTarget.elements.namedItem('password_reg') as HTMLInputElement)?.value;
+    const repassword = (e.currentTarget.elements.namedItem('repassword_reg') as HTMLInputElement)?.value;
+
+    if (password !== repassword) {
+      Swal.fire({
+        icon: "error",
+        title: "Password tidak sama",
+        text: "Pastikan password dan konfirmasi password sesuai",
+        theme: "auto"
+      });
+      return;
+    }
+
+    // Tampilkan loading
+    Swal.fire({
+      title: 'Mendaftarkan...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    const supabase = createClient();
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username: username,
+          phone: phone,
+        }
+      }
+    });
+
+    if (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Mendaftar",
+        text: error.message,
+        theme: "auto"
+      });
+      return;
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil Daftar!",
+      text: "Akun berhasil dibuat. Silakan login.",
+      timer: 3000,
+      showConfirmButton: false,
+      theme: "auto"
+    });
+    
+    // Hapus isi form setelah berhasil daftar
+    e.currentTarget.reset();
+    setActiveTab('login');
   };
 
   return (
@@ -56,83 +142,258 @@ export default function LoginPage() {
         <div className="p-10 flex flex-col items-center">
           
           <div className="mb-6 relative">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#8a2be2] to-[#0088ff] flex items-center justify-center shadow-[0_0_25px_0_rgba(100,50,250,0.5)] relative z-10 p-1 overflow-hidden">
+            {/* <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#8a2be2] to-[#0088ff] flex items-center justify-center shadow-[0_0_25px_0_rgba(100,50,250,0.5)] relative z-10 p-1 overflow-hidden">
               <Image 
-                src="/icon-kapal.png" 
+                src="/profile/icon.png" 
                 alt="Logo Kapal" 
                 width={40} 
                 height={40} 
                 className="object-contain drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" 
               />
-            </div>
+            </div> */}
+            <Image 
+                src="/profile/icon.png" 
+                alt="Logo Kapal" 
+                width={100} 
+                height={100} 
+                className="object-contain drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" 
+              />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-purple-500 rounded-full blur-[30px] opacity-20"></div>
           </div>
           
           <div className="text-center mb-2 font-black tracking-widest text-2xl flex gap-2 justify-center">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#e075ff] to-[#a352ff]">PRIMELOG</span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00d0ff] to-[#0088ff] ml-1">FLEET</span>
+           <span className='text-white'>Masuk Ke Sistem</span>
           </div>
 
-          <div className="text-center mb-4">
+          <div className="text-center mb-6">
             <h2 className="font-mono text-[11px] font-bold text-gray-300 tracking-wider">
-              Maritime Tracking System v2.0
+              Sistem Manajemen Armada Anagata Oceanics
             </h2>
           </div>
 
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="flex w-full bg-[#1a1c29]/80 rounded-lg p-1 mb-8 shadow-inner border border-white/5">
+            <button 
+              type="button" 
+              onClick={() => setActiveTab('login')}
+              className={`flex-1 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'login' ? 'bg-purple-500 text-white shadow-sm cursor-default' : 'text-gray-400 hover:text-white'}`}
+            >
+              Masuk
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setActiveTab('register')}
+              className={`flex-1 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'register' ? 'bg-purple-500 text-white shadow-sm cursor-default' : 'text-gray-400 hover:text-white'}`}
+            >
+              Buat Akun
+            </button>
+          </div>
+
+          {/* <div className="flex items-center justify-center gap-2 mb-8">
             <div className="w-2 h-2 rounded-full bg-[#00ff66] shadow-[0_0_8px_rgba(0,255,102,0.8)] relative">
               <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75"></div>
             </div>
             <span className="text-[10px] font-mono font-bold text-green-400 tracking-wider">SYSTEM ONLINE</span>
-          </div>
+          </div> */}
           
-          {/* Form */}
-          <form className="w-full" onSubmit={handleLogin}>
-            <div className="mb-5">
-              <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="username">
-                USERNAME
-              </label>
-              <div className="relative group">
-                <input 
-                  type="text" 
-                  id="username" 
-                  className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-purple-500/50 rounded-md p-3.5 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(168,85,247,0.15)]"
-                  placeholder="Username...."
-                />
-              </div>
-            </div>
-            
-            <div className="mb-8">
-              <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="password">
-                PASSWORD
-              </label>
-              <div className="relative group">
-                <input 
-                  type="password" 
-                  id="password" 
-                  className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md p-3.5 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
-                  placeholder="Password...."
-                />
-              </div>
-            </div>
-            
-            <button 
-              type="submit" 
-              className="w-full font-mono font-bold text-sm text-white tracking-widest py-4 rounded-md transition-all duration-300 relative overflow-hidden group shadow-[0_5px_20px_rgba(100,50,250,0.3)] hover:shadow-[0_8px_25px_rgba(100,50,250,0.5)] transform hover:-translate-y-0.5"
-            >
-              <span className="relative z-10">LOGIN TO SYSTEM</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-[#8a2be2] via-[#5a38fd] to-[#00a2ff] z-0"></div>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-20 bg-white z-0 transition-opacity duration-300"></div>
-            </button>
+          
+          <form key={activeTab} className="w-full" onSubmit={activeTab === 'login' ? handleLogin : handleRegister}>
+            {activeTab === 'login' ? (
+             
+              <>
+                <div className="mb-5">
+                  <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="email">
+                    EMAIL
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <EnvelopeIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
+                    </div>
+                    <input 
+                      type="email" 
+                      id="email" 
+                      required
+                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-purple-500/50 rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                      placeholder="contoh@email.com"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mb-8">
+                  <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="password">
+                    PASSWORD
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <LockClosedIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
+                    </div>
+
+                    <input 
+                      type={showRePassword ? "text" : "password"}
+                      id="password"
+                      required 
+                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-10 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      placeholder="Masukan Password"
+                    />
+                  
+                    <div 
+                      onClick={() => setShowRePassword(!showRePassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                    >
+                      {showRePassword ? (
+                        <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-white" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-gray-400 hover:text-white" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <button 
+                  type="submit" 
+                  className="w-full font-mono font-bold text-sm text-white tracking-widest py-4 rounded-md transition-all duration-300 relative overflow-hidden group shadow-[0_5px_20px_rgba(100,50,250,0.3)] hover:shadow-[0_8px_25px_rgba(100,50,250,0.5)] transform hover:-translate-y-0.5"
+                >
+                  <span className="relative z-10">LOGIN TO SYSTEM</span>
+                  <div className="absolute inset-0 bg-purple-500 z-0"></div>
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-20 bg-white z-0 transition-opacity duration-300"></div>
+                </button>
+              </>
+            ) : (
+              //  Buat Akun
+              <>
+                <div className="mb-5">
+                  
+                  <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="username_reg">
+                    Username
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <UserIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
+                    </div>
+                    <input 
+                      type="text" 
+                      id="username_reg" 
+                      required
+                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-purple-500/50 rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                      placeholder="Pilih username"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-5">
+                  <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="email_reg">
+                    Email
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <EnvelopeIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
+                    </div>
+                    <input 
+                      type="email" 
+                      id="email_reg"
+                      required 
+                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mb-5">
+                  <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="reg_telepon">
+                    No Telepon
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <PhoneIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
+                    </div>
+                    <input 
+                      type="number" 
+                      id="reg_telepon"
+                      required 
+                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      placeholder="+62 812-3456-7890"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-5">
+                  <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="password_reg">
+                    Password
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <LockClosedIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
+                    </div>
+
+                    <input 
+                      type={showPassword ? "text" : "password"}
+                      id="password_reg"
+                      required 
+                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-10 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      placeholder="Minimal 6 Karakter"
+                    />
+
+                    <div 
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-white" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-gray-400 hover:text-white" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-8">
+                  <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="repassword_reg">
+                    Konfirmasi Password
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <LockClosedIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
+                    </div>
+
+                    <input 
+                      type={showRePassword ? "text" : "password"}
+                      id="repassword_reg"
+                      required 
+                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-10 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      placeholder="Ulangi password"
+                    />
+                  
+                    <div 
+                      onClick={() => setShowRePassword(!showRePassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                    >
+                      {showRePassword ? (
+                        <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-white" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-gray-400 hover:text-white" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                
+                <button 
+                  type="submit" 
+                  className="w-full font-mono font-bold text-sm text-white tracking-widest py-4 rounded-md transition-all duration-300 relative overflow-hidden group shadow-[0_5px_20px_rgba(100,50,250,0.3)] hover:shadow-[0_8px_25px_rgba(100,50,250,0.5)] transform hover:-translate-y-0.5"
+                >
+                  <span className="relative z-10">CREATE ACCOUNT</span>
+                  <div className="absolute inset-0 bg-purple-500 z-0"></div>
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-20 bg-white z-0 transition-opacity duration-300"></div>
+                </button>
+              </>
+            )}
           </form>
           
         </div>
       </div>
       
-      {/* Footer */}
-      <div className="absolute bottom-8 text-center w-full z-10">
+      {/* <div className="absolute bottom-8 text-center w-full z-10">
         <p className="text-[10px] font-mono text-gray-600 tracking-widest">©2026 SIWEB KELOMPOK 11</p>
-      </div>
+      </div> */}
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
     </div>
