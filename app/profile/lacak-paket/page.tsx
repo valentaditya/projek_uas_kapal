@@ -1,4 +1,4 @@
-import { CubeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'; // Adjust outline vs solid as needed
+import { CubeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function LacakPaketPage() {
   return (
