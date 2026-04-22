@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from 'react';
 import { 
   UserCircleIcon, 
   ShieldCheckIcon, 
@@ -6,16 +9,38 @@ import {
   EnvelopeIcon,
   PhoneIcon,
   MapPinIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 export default function ProfilPage() {
-  const user = {
+  const [user, setUser] = useState({
     name: 'Customer User',
     email: 'customer.user@email.com',
     phone: '+62 812 3456 7890',
     address: 'Jakarta, Indonesia',
     company: 'PT. Example Company'
+  });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState(user);
+
+  const handleEditClick = () => {
+    setFormData(user);
+    setIsEditing(true);
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    setUser(formData);
+    setIsEditing(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
@@ -26,7 +51,10 @@ export default function ProfilPage() {
           <h2 className="text-2xl font-bold tracking-wider text-white mb-2">Profil Pengguna</h2>
           <p className="text-gray-400 text-xs tracking-wider">Kelola informasi akun Anda</p>
         </div>
-        <button className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-5 py-2.5 rounded-md shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all font-bold text-xs tracking-wider flex items-center gap-2 mt-4 md:mt-0">
+        <button 
+          onClick={handleEditClick}
+          className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-5 py-2.5 rounded-md shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all font-bold text-xs tracking-wider flex items-center gap-2 mt-4 md:mt-0"
+        >
           <PencilSquareIcon className="w-4 h-4" /> Edit Profil
         </button>
       </div>
@@ -110,6 +138,98 @@ export default function ProfilPage() {
         </div>
       </div>
 
+      {isEditing && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#151922] border border-white/10 rounded-lg w-full max-w-md p-6 relative">
+            <button 
+              onClick={() => setIsEditing(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-lg font-bold text-white mb-6 tracking-wider">Edit Profil</h3>
+            
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-mono">Nama Lengkap</label>
+                <input 
+                  type="text" 
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-mono">Email</label>
+                <input 
+                  type="email" 
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-mono">No. Telepon</label>
+                <input 
+                  type="text" 
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-mono">Alamat</label>
+                <input 
+                  type="text" 
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-mono">Perusahaan</label>
+                <input 
+                  type="text" 
+                  name="company"
+                  value={formData.company}
+                  onChange={handleChange}
+                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 rounded text-xs font-bold tracking-wider text-gray-400 hover:text-white transition-colors"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit"
+                  className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-4 py-2 rounded shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all text-xs font-bold tracking-wider"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

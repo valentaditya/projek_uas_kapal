@@ -262,7 +262,7 @@ export default function LoginPage() {
                   type="submit" 
                   className="w-full font-mono font-bold text-sm text-white tracking-widest py-4 rounded-md transition-all duration-300 relative overflow-hidden group shadow-[0_5px_20px_rgba(100,50,250,0.3)] hover:shadow-[0_8px_25px_rgba(100,50,250,0.5)] transform hover:-translate-y-0.5"
                 >
-                  <span className="relative z-10">LOGIN TO SYSTEM</span>
+                  <span className="relative z-10">MASUK KE SISTEM</span>
                   <div className="absolute inset-0 bg-purple-500 z-0"></div>
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-20 bg-white z-0 transition-opacity duration-300"></div>
                 </button>
@@ -390,7 +390,7 @@ export default function LoginPage() {
                   type="submit" 
                   className="w-full font-mono font-bold text-sm text-white tracking-widest py-4 rounded-md transition-all duration-300 relative overflow-hidden group shadow-[0_5px_20px_rgba(100,50,250,0.3)] hover:shadow-[0_8px_25px_rgba(100,50,250,0.5)] transform hover:-translate-y-0.5"
                 >
-                  <span className="relative z-10">CREATE ACCOUNT</span>
+                  <span className="relative z-10">BUAT AKUN</span>
                   <div className="absolute inset-0 bg-purple-500 z-0"></div>
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-20 bg-white z-0 transition-opacity duration-300"></div>
                 </button>

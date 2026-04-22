@@ -19,9 +19,11 @@ export default function TentangPage() {
             <p className="text-sm text-gray-300 leading-loose mb-10">
               Sistem kami memudahkan admin untuk membuat request pengiriman, sementara user dapat melacak status barang mereka secara real-time dengan nomor tracking yang diberikan.
             </p>
-            <button className="px-8 py-3 bg-[#a35de9] hover:bg-[#8643c7] transition-all rounded text-sm font-semibold shadow-[0_0_15px_rgba(163,93,233,0.3)] text-white">
-              Pelajari Lebih Lanjut
-            </button>
+            <a href="/login">
+              <button className="px-8 py-3 bg-[#a35de9] hover:bg-[#8643c7] transition-all rounded text-sm font-semibold shadow-[0_0_15px_rgba(163,93,233,0.3)] text-white">
+                Pelajari Lebih Lanjut
+              </button>
+            </a>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

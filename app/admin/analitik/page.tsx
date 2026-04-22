@@ -1,11 +1,17 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowTrendingUpIcon,
   ClockIcon,
   WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
+import { 
+  StatusDistribusiChart, 
+  RegionalDistribusiChart, 
+  FuelLevelChart, 
+  KecepatanChart 
+} from './AnalitikCharts';
 
 const ShipIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -26,11 +32,61 @@ const AnchorIcon = ({ className }: { className?: string }) => (
 );
 
 export default function AnalitikPage() {
-  const totalKapal = 8;
-  const countEnRoute = 4;
-  const countInPort = 2;
-  const countDelayed = 1;
-  const countMaintenance = 1;
+  const initialShips = [
+    { name: 'ANAGATA PIONEER', type: 'Container', status: 'En Route', kapten: 'Kapten Budi Santoso', tujuan: 'Los Angeles', kecepatan: '17.888882420316165' },
+    { name: 'ANAGATA OCEAN', type: 'Bulk Carrier', status: 'In Port', kapten: 'Kapten Agus Wijaya', tujuan: 'Singapore', kecepatan: '0' },
+    { name: 'ANAGATA WAVE', type: 'Tanker', status: 'Delayed', kapten: 'Kapten Andi Pratama', tujuan: 'Sydney', kecepatan: '12.3' },
+    { name: 'ANAGATA VOYAGER', type: 'Container', status: 'En Route', kapten: 'Kapten Hendra Kusuma', tujuan: 'Rotterdam', kecepatan: '20.61672740950364' },
+    { name: 'ANAGATA HORIZON', type: 'Ro-Ro', status: 'Maintenance', kapten: 'Kapten Dedi Setiawan', tujuan: 'New York', kecepatan: '0' },
+    { name: 'ANAGATA NAVIGATOR', type: 'Container', status: 'En Route', kapten: 'Kapten Rudi Hartono', tujuan: 'Hong Kong', kecepatan: '21.19890074439647' },
+    { name: 'ANAGATA GUARDIAN', type: 'Bulk Carrier', status: 'En Route', kapten: 'Kapten Bambang Suryadi', tujuan: 'Santos', kecepatan: '16.35021022308469' },
+    { name: 'ANAGATA SENTINEL', type: 'Tanker', status: 'In Port', kapten: 'Kapten Arief Budiman', tujuan: 'Dubai', kecepatan: '0' },
+  ];
+
+  const availableStatuses = [
+    { status: 'En Route' },
+    { status: 'In Port' },
+    { status: 'Delayed' },
+    { status: 'Maintenance' },
+  ];
+
+  const [shipsData, setShipsData] = useState(initialShips);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setShipsData(currentData => 
+        currentData.map(ship => {
+          if (Math.random() > 0.4) return ship;
+
+          const randomStatusObj = availableStatuses[Math.floor(Math.random() * availableStatuses.length)];
+          const newStatus = randomStatusObj.status;
+          
+          let newSpeed = ship.kecepatan;
+          if (newStatus === 'In Port' || newStatus === 'Maintenance') {
+             newSpeed = '0';
+          } else if (newStatus === 'Delayed') {
+             newSpeed = (Math.random() * 8 + 4).toFixed(1); 
+          } else if (newStatus === 'En Route') {
+             newSpeed = (Math.random() * 10 + 15).toFixed(14); 
+          }
+
+          return {
+            ...ship,
+            status: newStatus,
+            kecepatan: newSpeed
+          };
+        })
+      );
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const totalKapal = shipsData.length;
+  const countEnRoute = shipsData.filter(s => s.status === 'En Route').length;
+  const countInPort = shipsData.filter(s => s.status === 'In Port').length;
+  const countDelayed = shipsData.filter(s => s.status === 'Delayed').length;
+  const countMaintenance = shipsData.filter(s => s.status === 'Maintenance').length;
 
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
@@ -93,119 +149,31 @@ export default function AnalitikPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-20">
         
-        <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg">
+        <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg h-[400px] flex flex-col">
           <h3 className="text-[11px] font-bold text-gray-300 tracking-wider mb-6">DISTRIBUSI STATUS ARMADA</h3>
-          <div className="h-48 relative flex items-end justify-around gap-2 px-4 pb-6 border-b border-l border-white/10">
-            <div className="absolute left-[-20px] top-0 bottom-6 flex flex-col justify-between text-[9px] text-gray-500">
-              <span>4 -</span>
-              <span>3 -</span>
-              <span>2 -</span>
-              <span>1 -</span>
-              <span>0 -</span>
-            </div>
-            
-            <div className="w-full max-w-[80px] bg-[#b06aee] h-full rounded-t-sm flex items-end justify-center group relative">
-              <span className="absolute -bottom-6 text-[9px] text-gray-400">En Route</span>
-              <div className="absolute -top-8 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">4</div>
-            </div>
-            <div className="w-full max-w-[80px] bg-[#b06aee] h-[50%] rounded-t-sm flex items-end justify-center group relative opacity-80">
-              <span className="absolute -bottom-6 text-[9px] text-gray-400">In Port</span>
-              <div className="absolute -top-8 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">2</div>
-            </div>
-            <div className="w-full max-w-[80px] bg-[#b06aee] h-[25%] rounded-t-sm flex items-end justify-center group relative opacity-60">
-              <span className="absolute -bottom-6 text-[9px] text-gray-400">Delayed</span>
-              <div className="absolute -top-8 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">1</div>
-            </div>
-            <div className="w-full max-w-[80px] bg-[#b06aee] h-[25%] rounded-t-sm flex items-end justify-center group relative opacity-40">
-              <span className="absolute -bottom-6 text-[9px] text-gray-400">Maintenance</span>
-              <div className="absolute -top-8 bg-black/80 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">1</div>
-            </div>
+          <div className="flex-1 relative">
+            <StatusDistribusiChart ships={shipsData} />
           </div>
         </div>
 
-        <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg">
+        <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg h-[400px] flex flex-col">
           <h3 className="text-[11px] font-bold text-gray-300 tracking-wider mb-6">DISTRIBUSI REGIONAL</h3>
-          <div className="h-48 relative flex items-end justify-around gap-2 px-4 pb-6 border-b border-l border-white/10">
-            <div className="absolute left-[-24px] top-0 bottom-6 flex flex-col justify-between text-[9px] text-gray-500">
-              <span>1 -</span>
-              <span>0.75-</span>
-              <span>0.5 -</span>
-              <span>0.25-</span>
-              <span>0 -</span>
-            </div>
-            
-            {['Pacific', 'Southeast Asia', 'Oceania', 'Europe', 'North America', 'East Asia', 'South America', 'Middle East'].map((region, i) => (
-              <div key={i} className="w-full max-w-[40px] bg-[#3b82f6] h-full rounded-t-sm flex items-end justify-center group relative hover:bg-[#60a5fa] transition-colors cursor-pointer">
-                <span className="absolute -bottom-10 text-[7px] text-gray-400 transform -rotate-45 whitespace-nowrap">{region}</span>
-              </div>
-            ))}
+          <div className="flex-1 relative">
+            <RegionalDistribusiChart />
           </div>
         </div>
 
-        <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg">
+        <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg h-[400px] flex flex-col">
           <h3 className="text-[11px] font-bold text-gray-300 tracking-wider mb-6">LEVEL BAHAN BAKAR PER KAPAL</h3>
-          <div className="h-48 relative border-b border-l border-white/10 p-2">
-            <div className="absolute left-[-32px] top-0 bottom-0 flex flex-col justify-between text-[9px] text-gray-500">
-              <span>V001 -</span>
-              <span>V006 -</span>
-              <span>V007 -</span>
-              <span>V002 -</span>
-              <span>0</span>
-            </div>
-            <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-[9px] text-gray-500">
-              <span>0</span>
-              <span>0.25</span>
-              <span>0.5</span>
-              <span>0.75</span>
-              <span>1</span>
-            </div>
-            
-            <div className="absolute top-1/4 left-0 right-0 h-[1px] bg-white/5 border-dashed border-b border-white/10"></div>
-            <div className="absolute top-2/4 left-0 right-0 h-[1px] bg-white/5 border-dashed border-b border-white/10"></div>
-            <div className="absolute top-3/4 left-0 right-0 h-[1px] bg-white/5 border-dashed border-b border-white/10"></div>
-            
-            <div className="w-full h-full flex items-center justify-center text-xs text-gray-600 font-mono italic">
-              -- waiting for stream --
-            </div>
+          <div className="flex-1 relative">
+            <FuelLevelChart />
           </div>
         </div>
 
-        <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg">
+        <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg h-[400px] flex flex-col">
           <h3 className="text-[11px] font-bold text-gray-300 tracking-wider mb-6">KECEPATAN SAAT INI (BERLAYAR)</h3>
-          <div className="h-48 relative border-b border-l border-white/10">
-             <div className="absolute left-[-20px] top-[-8px] bottom-6 flex flex-col justify-between text-[9px] text-gray-500">
-              <span>24 -</span>
-              <span>18 -</span>
-              <span>12 -</span>
-              <span>6 -</span>
-              <span>0 -</span>
-            </div>
-            <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-[9px] text-gray-500 px-4">
-              <span>V001</span>
-              <span>V004</span>
-              <span>V006</span>
-              <span>V007</span>
-            </div>
-
-            <div className="absolute top-1/4 left-0 right-0 h-[1px] bg-white/5 border-dashed border-b border-white/10"></div>
-            <div className="absolute top-2/4 left-0 right-0 h-[1px] bg-white/5 border-dashed border-b border-white/10"></div>
-            <div className="absolute top-3/4 left-0 right-0 h-[1px] bg-white/5 border-dashed border-b border-white/10"></div>
-            
-            <div className="absolute inset-0 pt-4 px-4 pb-6">
-              <svg className="w-full h-full" preserveAspectRatio="none">
-                <polyline 
-                  points="0,10 33%,50 66%,40 100%,70" 
-                  fill="none" 
-                  stroke="#06b6d4" 
-                  strokeWidth="2"
-                  vectorEffect="non-scaling-stroke"
-                />
-                <circle cx="0" cy="10" r="4" fill="#06b6d4" className="animate-pulse" />
-                <circle cx="33%" cy="50" r="4" fill="#06b6d4" />
-                <circle cx="66%" cy="40" r="4" fill="#06b6d4" />
-                <circle cx="100%" cy="70" r="4" fill="#06b6d4" />
-              </svg>
-            </div>
+          <div className="flex-1 relative">
+             <KecepatanChart ships={shipsData} />
           </div>
         </div>
 

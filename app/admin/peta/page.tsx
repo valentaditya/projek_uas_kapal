@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { 
   XMarkIcon,
   MapIcon,
@@ -11,8 +12,85 @@ import {
   FireIcon,
 } from '@heroicons/react/24/outline';
 
+const PetaMap = dynamic(() => import('./PetaMap'), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 w-full h-full bg-[#0a0d14] flex items-center justify-center animate-pulse"><span className="text-gray-500 font-mono text-sm">Loading Map...</span></div>
+});
+
 export default function PetaGlobalPage() {
-  const [selectedShip, setSelectedShip] = useState<boolean>(true);
+  const initialShips = [
+    { name: 'ANAGATA PIONEER', type: 'Container', status: 'En Route', kapten: 'Kapten Budi Santoso', tujuan: 'Los Angeles', kecepatan: '17.888882420316165' },
+    { name: 'ANAGATA OCEAN', type: 'Bulk Carrier', status: 'In Port', kapten: 'Kapten Agus Wijaya', tujuan: 'Singapore', kecepatan: '0' },
+    { name: 'ANAGATA WAVE', type: 'Tanker', status: 'Delayed', kapten: 'Kapten Andi Pratama', tujuan: 'Sydney', kecepatan: '12.3' },
+    { name: 'ANAGATA VOYAGER', type: 'Container', status: 'En Route', kapten: 'Kapten Hendra Kusuma', tujuan: 'Rotterdam', kecepatan: '20.61672740950364' },
+    { name: 'ANAGATA HORIZON', type: 'Ro-Ro', status: 'Maintenance', kapten: 'Kapten Dedi Setiawan', tujuan: 'New York', kecepatan: '0' },
+    { name: 'ANAGATA NAVIGATOR', type: 'Container', status: 'En Route', kapten: 'Kapten Rudi Hartono', tujuan: 'Hong Kong', kecepatan: '21.19890074439647' },
+    { name: 'ANAGATA GUARDIAN', type: 'Bulk Carrier', status: 'En Route', kapten: 'Kapten Bambang Suryadi', tujuan: 'Santos', kecepatan: '16.35021022308469' },
+    { name: 'ANAGATA SENTINEL', type: 'Tanker', status: 'In Port', kapten: 'Kapten Arief Budiman', tujuan: 'Dubai', kecepatan: '0' },
+  ];
+
+  const availableStatuses = [
+    { status: 'En Route' },
+    { status: 'In Port' },
+    { status: 'Delayed' },
+    { status: 'Maintenance' },
+  ];
+
+  const [shipsData, setShipsData] = useState(initialShips);
+  const [selectedShipName, setSelectedShipName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setShipsData(currentData => 
+        currentData.map(ship => {
+          if (Math.random() > 0.4) return ship;
+
+          const randomStatusObj = availableStatuses[Math.floor(Math.random() * availableStatuses.length)];
+          const newStatus = randomStatusObj.status;
+          
+          let newSpeed = ship.kecepatan;
+          if (newStatus === 'In Port' || newStatus === 'Maintenance') {
+             newSpeed = '0';
+          } else if (newStatus === 'Delayed') {
+             newSpeed = (Math.random() * 8 + 4).toFixed(1); 
+          } else if (newStatus === 'En Route') {
+             newSpeed = (Math.random() * 10 + 15).toFixed(14); 
+          }
+
+          return {
+            ...ship,
+            status: newStatus,
+            kecepatan: newSpeed
+          };
+        })
+      );
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const selectedShip = shipsData.find(s => s.name === selectedShipName);
+
+  const getStatusColorClass = (status: string) => {
+    switch(status) {
+      case 'En Route': return 'text-[#3b82f6]';
+      case 'In Port': return 'text-[#06b6d4]';
+      case 'Delayed': return 'text-[#eab308]';
+      case 'Maintenance': return 'text-[#f43f5e]';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const shipCoordinates: Record<string, [number, number]> = {
+    'Los Angeles': [34.0522, -118.2437],
+    'Singapore': [1.2902, 103.8519],
+    'Sydney': [-33.8688, 151.2093],
+    'Rotterdam': [51.9225, 4.47917],
+    'New York': [40.7128, -74.0060],
+    'Hong Kong': [22.3193, 114.1694],
+    'Santos': [-23.9618, -46.3322],
+    'Dubai': [25.2048, 55.2708]
+  };
 
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
@@ -21,84 +99,18 @@ export default function PetaGlobalPage() {
         <p className="text-gray-400 text-xs tracking-wider">Posisi kapal real-time</p>
       </div>
 
-      <div className="bg-[#10131a] border border-white/5 rounded-t-[10px] p-6 relative shadow-lg overflow-hidden flex flex-col h-[500px]">
-        <div className="flex justify-between items-center mb-4 z-10">
-          <h3 className="text-xs font-bold text-gray-300 tracking-widest uppercase">GLOBAL FLEET MAP</h3>
-          <p className="text-[10px] text-gray-500 font-mono flex items-center gap-2">
-            <MapIcon className="w-4 h-4" /> 8 vessels tracked
+      <div className="bg-[#10131a] border border-white/5 rounded-t-[10px] p-0 relative shadow-lg overflow-hidden flex flex-col h-[500px]">
+        <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-10 pointer-events-none">
+          <h3 className="text-xs font-bold text-gray-300 tracking-widest uppercase bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10">GLOBAL FLEET MAP</h3>
+          <p className="text-[10px] text-gray-400 font-mono flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10">
+            <MapIcon className="w-4 h-4" /> {shipsData.length} vessels tracked
           </p>
         </div>
 
-        <div className="flex-1 relative border border-white/5 bg-[#0a0d14] rounded overflow-hidden">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxjaXJjbGUgY3g9IjEiIGN5PSIxIiByPSIxIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiAvPgo8L3N2Zz4=')] opacity-50"></div>
-          
-          <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-white/5 border-b border-dashed border-white/5"></div>
-          <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-white/5 border-r border-dashed border-white/5"></div>
+        <div className="flex-1 relative border border-white/5 bg-[#0a0d14] overflow-hidden">
+          <PetaMap ships={shipsData} onShipClick={(name) => setSelectedShipName(name)} />
 
-          <div className="absolute top-4 left-4 border border-white/10 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded text-[9px] text-gray-400 tracking-wider">
-            Pelacakan Real-time
-          </div>
-          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" width="100%" height="300" viewBox="0 0 1200 300" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="bg" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#071226"/>
-                <stop offset="100%" stopColor="#0a1833"/>
-              </linearGradient>
-
-              <radialGradient id="glowBlue">
-                <stop offset="0%" stopColor="#4da3ff" stopOpacity="0.9"/>
-                <stop offset="100%" stopColor="#4da3ff" stopOpacity="0"/>
-              </radialGradient>
-
-              <radialGradient id="glowLight">
-                <stop offset="0%" stopColor="#8be0ff" stopOpacity="0.9"/>
-                <stop offset="100%" stopColor="#8be0ff" stopOpacity="0"/>
-              </radialGradient>
-            </defs>
-
-            <rect width="1200" height="300" fill="url(#bg)" />
-
-            <g stroke="#2a3a66" strokeWidth="0.5" opacity="0.4">
-              <line x1="100" y1="0" x2="100" y2="300"/>
-              <line x1="200" y1="0" x2="200" y2="300"/>
-              <line x1="300" y1="0" x2="300" y2="300"/>
-              <line x1="400" y1="0" x2="400" y2="300"/>
-              <line x1="500" y1="0" x2="500" y2="300"/>
-              <line x1="600" y1="0" x2="600" y2="300"/>
-              <line x1="700" y1="0" x2="700" y2="300"/>
-              <line x1="800" y1="0" x2="800" y2="300"/>
-              <line x1="900" y1="0" x2="900" y2="300"/>
-              <line x1="1000" y1="0" x2="1000" y2="300"/>
-            </g>
-
-            <g fill="none" stroke="#7c5cff" strokeWidth="1.5" opacity="0.7">
-              <path d="M420 90 L450 80 L470 110 L460 160 L430 200 L400 170 Z"/>
-              <path d="M560 60 L580 80 L600 120 L580 160 L560 210 L540 160 L530 120 L550 80 Z"/>
-              <path d="M720 70 L780 50 L850 80 L880 130 L820 160 L790 200 L730 180 L700 130 Z"/>
-              <path d="M820 190 L860 210 L880 240 L840 260 L800 250 L790 210 Z"/>
-            </g>
-
-            <g>
-              <circle cx="350" cy="90" r="10" fill="#ff4d4d" stroke="white" strokeWidth="2"/>
-
-              <circle cx="470" cy="170" r="20" fill="url(#glowBlue)"/>
-              <circle cx="470" cy="170" r="5" fill="#4da3ff"/>
-
-              <circle cx="600" cy="70" r="20" fill="url(#glowBlue)"/>
-              <circle cx="600" cy="70" r="5" fill="#4da3ff"/>
-
-              <circle cx="950" cy="90" r="25" fill="url(#glowBlue)"/>
-              <circle cx="950" cy="90" r="6" fill="#4da3ff"/>
-
-              <circle cx="800" cy="110" r="15" fill="url(#glowLight)"/>
-              <circle cx="800" cy="110" r="4" fill="#8be0ff"/>
-
-              <circle cx="900" cy="160" r="15" fill="url(#glowLight)"/>
-              <circle cx="900" cy="160" r="4" fill="#8be0ff"/>
-            </g>
-          </svg>
-
-          <div className="absolute bottom-4 right-4 border border-white/10 bg-[#151922]/90 backdrop-blur-md p-4 rounded text-[10px] w-40">
+          <div className="absolute bottom-4 right-4 border border-white/10 bg-[#151922]/90 backdrop-blur-md p-4 rounded text-[10px] w-40 z-10 shadow-xl pointer-events-none">
             <h4 className="font-bold text-gray-300 tracking-wider mb-3">STATUS</h4>
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -125,15 +137,15 @@ export default function PetaGlobalPage() {
       {selectedShip && (
         <div className="bg-[#151922] border-x border-b border-[#3b2d4a] rounded-b-[10px] p-6 shadow-2xl relative transition-all duration-300 transform origin-top">
           <button 
-            onClick={() => setSelectedShip(!selectedShip)}
+            onClick={() => setSelectedShipName(null)}
             className="absolute top-4 right-4 p-1.5 text-gray-500 hover:text-white transition-colors"
           >
             <XMarkIcon className="w-5 h-5" />
           </button>
           
           <div className="mb-6">
-            <h2 className="text-gray-200 font-bold tracking-wider text-base">ANAGATA HORIZON</h2>
-            <p className="text-[#f43f5e] text-[10px] font-bold tracking-widest uppercase mt-1">MAINTENANCE</p>
+            <h2 className="text-gray-200 font-bold tracking-wider text-base">{selectedShip.name}</h2>
+            <p className={`${getStatusColorClass(selectedShip.status)} text-[10px] font-bold tracking-widest uppercase mt-1`}>{selectedShip.status}</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 gap-y-8">
@@ -142,21 +154,21 @@ export default function PetaGlobalPage() {
                 <MapIcon className="w-3.5 h-3.5" />
                 <p className="text-[10px]">Type</p>
               </div>
-              <p className="text-gray-200 font-bold text-sm">Ro-Ro</p>
+              <p className="text-gray-200 font-bold text-sm">{selectedShip.type}</p>
             </div>
             <div>
               <div className="flex items-center gap-2 mb-2 text-gray-500">
                 <PaperAirplaneIcon className="w-3.5 h-3.5" />
                 <p className="text-[10px]">Speed</p>
               </div>
-              <p className="text-gray-200 font-bold text-sm">0.0 kn</p>
+              <p className="text-gray-200 font-bold text-sm">{Number(selectedShip.kecepatan).toFixed(2)} kn</p>
             </div>
             <div>
               <div className="flex items-center gap-2 mb-2 text-gray-500">
                 <MapIcon className="w-3.5 h-3.5" />
                 <p className="text-[10px]">Dest</p>
               </div>
-              <p className="text-gray-200 font-bold text-sm">New York</p>
+              <p className="text-gray-200 font-bold text-sm">{selectedShip.tujuan}</p>
             </div>
             <div>
               <div className="flex items-center gap-2 mb-2 text-gray-500">
@@ -169,13 +181,13 @@ export default function PetaGlobalPage() {
               <div className="flex items-center gap-2 mb-2 text-gray-500">
                 <p className="text-[10px]">Lat</p>
               </div>
-              <p className="text-gray-200 font-bold text-sm">40.71°</p>
+              <p className="text-gray-200 font-bold text-sm">{shipCoordinates[selectedShip.tujuan]?.[0]?.toFixed(2)}°</p>
             </div>
             <div>
               <div className="flex items-center gap-2 mb-2 text-gray-500">
                 <p className="text-[10px]">Lon</p>
               </div>
-              <p className="text-gray-200 font-bold text-sm">-74.01°</p>
+              <p className="text-gray-200 font-bold text-sm">{shipCoordinates[selectedShip.tujuan]?.[1]?.toFixed(2)}°</p>
             </div>
             <div>
               <div className="flex items-center gap-2 mb-2 text-gray-500">
