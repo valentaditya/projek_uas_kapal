@@ -82,7 +82,7 @@ export function RegionalDistribusiChart() {
             cursor={{ fill: '#ffffff05' }}
             contentStyle={{ backgroundColor: '#151922', borderColor: '#ffffff10', color: '#fff', borderRadius: '8px' }}
             itemStyle={{ color: '#3b82f6' }}
-            formatter={(val: number) => [val, 'Konsentrasi']}
+            formatter={(val: any) => [val, 'Konsentrasi']}
           />
           <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
         </BarChart>
@@ -122,7 +122,7 @@ export function FuelLevelChart() {
             cursor={{ fill: '#ffffff05' }}
             contentStyle={{ backgroundColor: '#151922', borderColor: '#ffffff10', color: '#fff', borderRadius: '8px' }}
             itemStyle={{ color: '#b06aee' }}
-            formatter={(val: number) => [`${(val * 100).toFixed(0)}%`, 'Bahan Bakar']}
+            formatter={(val: any) => [`${(val * 100).toFixed(0)}%`, 'Bahan Bakar']}
           />
           <Bar dataKey="fuel" fill="#b06aee" radius={[0, 4, 4, 0]} barSize={20} />
         </BarChart>
@@ -159,7 +159,7 @@ export function KecepatanChart({ ships }: { ships: any[] }) {
           <Tooltip
             contentStyle={{ backgroundColor: '#151922', borderColor: '#ffffff10', color: '#fff', borderRadius: '8px' }}
             itemStyle={{ color: '#06b6d4' }}
-            formatter={(val: number) => [`${val.toFixed(1)} kn`, 'Kecepatan']}
+            formatter={(val: any) => [`${val.toFixed(1)} kn`, 'Kecepatan']}
           />
           <Line 
             type="monotone" 
