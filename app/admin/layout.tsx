@@ -193,7 +193,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
-                <Link key={item.name} href={item.href}>
+                <Link key={item.name} href={item.href || '#'}>
                   <div className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors text-xs tracking-wider cursor-pointer ${
                     isActive 
                       ? 'bg-[#b06aee] text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] font-bold' 
