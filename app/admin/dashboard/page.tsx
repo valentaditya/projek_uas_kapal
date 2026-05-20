@@ -8,6 +8,7 @@ import {
   MapPinIcon,
   BoltIcon
 } from '@heroicons/react/24/outline';
+import { createClient } from '@/utils/supabase/client';
 
 const ShipIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -28,69 +29,55 @@ const AnchorIcon = ({ className }: { className?: string }) => (
 );
 
 export default function DashboardPage() {
-  const initialShips = [
-    { name: 'ANAGATA PIONEER', type: 'Container', status: 'En Route', kapten: 'Kapten Budi Santoso', tujuan: 'Los Angeles', kecepatan: '17.888882420316165', statusColor: 'text-[#3b82f6]', statusBg: 'bg-[#3b82f6]/10', borderColor: 'border-[#3b82f6]/20' },
-    { name: 'ANAGATA OCEAN', type: 'Bulk Carrier', status: 'In Port', kapten: 'Kapten Agus Wijaya', tujuan: 'Singapore', kecepatan: '0', statusColor: 'text-[#10b981]', statusBg: 'bg-[#10b981]/10', borderColor: 'border-[#10b981]/20' },
-    { name: 'ANAGATA WAVE', type: 'Tanker', status: 'Delayed', kapten: 'Kapten Andi Pratama', tujuan: 'Sydney', kecepatan: '12.3', statusColor: 'text-[#eab308]', statusBg: 'bg-[#eab308]/10', borderColor: 'border-[#eab308]/20' },
-    { name: 'ANAGATA VOYAGER', type: 'Container', status: 'En Route', kapten: 'Kapten Hendra Kusuma', tujuan: 'Rotterdam', kecepatan: '20.61672740950364', statusColor: 'text-[#3b82f6]', statusBg: 'bg-[#3b82f6]/10', borderColor: 'border-[#3b82f6]/20' },
-    { name: 'ANAGATA HORIZON', type: 'Ro-Ro', status: 'Maintenance', kapten: 'Kapten Dedi Setiawan', tujuan: 'New York', kecepatan: '0', statusColor: 'text-[#f97316]', statusBg: 'bg-[#f97316]/10', borderColor: 'border-[#f97316]/20' },
-    { name: 'ANAGATA NAVIGATOR', type: 'Container', status: 'En Route', kapten: 'Kapten Rudi Hartono', tujuan: 'Hong Kong', kecepatan: '21.19890074439647', statusColor: 'text-[#3b82f6]', statusBg: 'bg-[#3b82f6]/10', borderColor: 'border-[#3b82f6]/20' },
-    { name: 'ANAGATA GUARDIAN', type: 'Bulk Carrier', status: 'En Route', kapten: 'Kapten Bambang Suryadi', tujuan: 'Santos', kecepatan: '16.35021022308469', statusColor: 'text-[#3b82f6]', statusBg: 'bg-[#3b82f6]/10', borderColor: 'border-[#3b82f6]/20' },
-    { name: 'ANAGATA SENTINEL', type: 'Tanker', status: 'In Port', kapten: 'Kapten Arief Budiman', tujuan: 'Dubai', kecepatan: '0', statusColor: 'text-[#10b981]', statusBg: 'bg-[#10b981]/10', borderColor: 'border-[#10b981]/20' },
-  ];
-
-  const availableStatuses = [
-    { status: 'En Route', color: 'text-[#3b82f6]', bg: 'bg-[#3b82f6]/10' },
-    { status: 'In Port', color: 'text-[#10b981]', bg: 'bg-[#10b981]/10' },
-    { status: 'Delayed', color: 'text-[#eab308]', bg: 'bg-[#eab308]/10' },
-    { status: 'Maintenance', color: 'text-[#f97316]', bg: 'bg-[#f97316]/10' },
-  ];
-
-  const [shipsData, setShipsData] = useState(initialShips);
+  const [shipsData, setShipsData] = useState<any[]>([]);
+  const supabase = createClient();
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setShipsData(currentData => 
-        currentData.map(ship => {
-          if (Math.random() > 0.4) return ship;
+    const fetchKapal = async () => {
+      const { data, error } = await supabase
+        .from('kapal')
+        .select('*');
 
-          const randomStatusObj = availableStatuses[Math.floor(Math.random() * availableStatuses.length)];
-          const newStatus = randomStatusObj.status;
+      if (data && !error) {
+        const formattedData = data.map(ship => {
+          let statusColor = 'text-[#3b82f6]'; 
+          let statusBg = 'bg-[#3b82f6]/10';   
           
-          let newSpeed = ship.kecepatan;
-          if (newStatus === 'In Port' || newStatus === 'Maintenance') {
-             newSpeed = '0';
-          } else if (newStatus === 'Delayed') {
-             newSpeed = (Math.random() * 8 + 4).toFixed(1); 
-          } else if (newStatus === 'En Route') {
-             newSpeed = (Math.random() * 10 + 15).toFixed(14); 
-          }
+          if (ship.status_kapal === 'En Route') { statusColor = 'text-[#3b82f6]'; statusBg = 'bg-[#3b82f6]/10'; }
+          else if (ship.status_kapal === 'In Port') { statusColor = 'text-[#10b981]'; statusBg = 'bg-[#10b981]/10'; }
+          else if (ship.status_kapal === 'Delayed') { statusColor = 'text-[#eab308]'; statusBg = 'bg-[#eab308]/10'; }
+          else if (ship.status_kapal === 'Maintenance') { statusColor = 'text-[#f97316]'; statusBg = 'bg-[#f97316]/10'; }
 
           return {
             ...ship,
-            status: newStatus,
-            statusColor: randomStatusObj.color,
-            statusBg: randomStatusObj.bg,
-            kecepatan: newSpeed
+            statusColor,
+            statusBg
           };
-        })
-      );
+        });
+        setShipsData(formattedData);
+      }
+    };
+
+    fetchKapal();
+
+    const intervalId = setInterval(() => {
+      fetchKapal();
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [supabase]);
 
   const totalKapal = shipsData.length;
-  const countEnRoute = shipsData.filter(s => s.status === 'En Route').length;
-  const countInPort = shipsData.filter(s => s.status === 'In Port').length;
-  const countDelayed = shipsData.filter(s => s.status === 'Delayed').length;
-  const countMaintenance = shipsData.filter(s => s.status === 'Maintenance').length;
+  const countEnRoute = shipsData.filter(s => s.status_kapal === 'En Route').length;
+  const countInPort = shipsData.filter(s => s.status_kapal === 'In Port').length;
+  const countDelayed = shipsData.filter(s => s.status_kapal === 'Delayed').length;
+  const countMaintenance = shipsData.filter(s => s.status_kapal === 'Maintenance').length;
 
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
       <div className="mb-8">
         <h2 className="text-2xl font-bold tracking-wider text-white mb-2">Ringkasan Armada</h2>
-        <p className="text-gray-400 text-xs tracking-wider">Pemantauan real-time - update setiap 5 detik</p>
+        {/* <p className="text-gray-400 text-xs tracking-wider">Pemantauan real-time - update setiap 5 detik</p> */}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
@@ -154,30 +141,30 @@ export default function DashboardPage() {
                   <ShipIcon className="w-4 h-4 text-[#b06aee]" />
                 </div>
                 <div>
-                  <h3 className="text-gray-200 font-bold tracking-wide text-xs">{ship.name}</h3>
-                  <p className="text-[10px] text-gray-500">{ship.type}</p>
+                  <h3 className="text-gray-200 font-bold tracking-wide text-xs">{ship.nama_kapal}</h3>
+                  <p className="text-[10px] text-gray-500">{ship.tipe_kapal}</p>
                 </div>
               </div>
               <div className={`px-2 py-1 rounded text-[10px] font-semibold flex-shrink-0 ${ship.statusBg} ${ship.statusColor}`}>
-                {ship.status}
+                {ship.status_kapal}
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center text-[11px] text-gray-400">
                 <span>Kapten:</span>
-                <span className="text-gray-200 font-mono tracking-tight font-medium text-right max-w-[130px] truncate">{ship.kapten}</span>
+                <span className="text-gray-200 font-mono tracking-tight font-medium text-right max-w-[130px] truncate">{ship.nama_kapten}</span>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-gray-400">
                 <MapPinIcon className="w-3.5 h-3.5 shrink-0" /> 
-                <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.tujuan}</span>
+                <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.tujuan_kapal}</span>
               </div>
               <div className="flex justify-between items-center text-[11px] text-gray-400">
                 <div className="flex items-center gap-2">
                   <BoltIcon className="w-3.5 h-3.5 shrink-0" />
-                  <span>Kecepatan:</span>
+                  <span>Fuel:</span>
                 </div>
-                <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.kecepatan} kn</span>
+                <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.fuel_kapal ?? 0} %</span>
               </div>
             </div>
           </div>

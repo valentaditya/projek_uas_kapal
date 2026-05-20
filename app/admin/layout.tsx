@@ -16,6 +16,7 @@ import {
   CubeIcon,
   CheckIcon,
   ExclamationTriangleIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 
 const ShipIcon = ({ className }: { className?: string }) => (
@@ -89,13 +90,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/login');
   };
 
-  const menuItems = [
-    { name: 'Dashboard', href: '/admin/dashboard', icon: ShipIcon },
-    { name: 'Kelola Kapal', href: '/admin/kelola-kapal', icon: AnchorIcon },
-    { name: 'Analitik', href: '/admin/analitik', icon: AnalyticsIcon },
-    { name: 'Rute', href: '/admin/rute', icon: RoutePathIcon },
+  const navItems = [
+    {
+      name: 'Utama',
+      icon: Square3Stack3DIcon,
+      isMega: true,
+      items: [
+        { name: 'Dashboard', href: '/admin/dashboard', icon: ShipIcon, desc: 'Ringkasan analitik dan metrik utama' },
+        { name: 'Kelola Kapal', href: '/admin/kelola-kapal', icon: AnchorIcon, desc: 'Manajemen armada kapal' },
+        { name: 'Analitik', href: '/admin/analitik', icon: AnalyticsIcon, desc: 'Statistik performa dan laporan' },
+      ]
+    },
+    {
+      name: 'Operasional',
+      icon: MapIcon,
+      isMega: true,
+      items: [
+        { name: 'Peta', href: '/admin/peta', icon: MapIcon, desc: 'Pemantauan lokasi kapal real-time' },
+        { name: 'Rute', href: '/admin/rute', icon: RoutePathIcon, desc: 'Manajemen rute pelayaran' },
+      ]
+    },
     { name: 'Pengiriman', href: '/admin/pengiriman', icon: CubeIcon },
-    { name: 'Peta', href: '/admin/peta', icon: MapIcon },
     { name: 'Kelola User', href: '/admin/kelola-user', icon: UsersIcon },
   ];
 
@@ -132,7 +147,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
-            {menuItems.map((item) => {
+            {navItems.map((item) => {
+              if (item.isMega && item.items) {
+                const Icon = item.icon;
+                const isActive = item.items.some(subItem => pathname === subItem.href);
+                return (
+                  <div key={item.name} className="relative group">
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors text-xs tracking-wider cursor-pointer ${
+                      isActive 
+                        ? 'bg-[#b06aee] text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] font-bold' 
+                        : 'text-gray-400 group-hover:text-white group-hover:bg-white/5'
+                    }`}>
+                      <Icon className="w-4 h-4" /> 
+                      {item.name}
+                      <ChevronDownIcon className="w-3 h-3 ml-1 group-hover:rotate-180 transition-transform duration-200" />
+                    </div>
+                    {/* Mega Menu Dropdown */}
+                    <div className="absolute top-full left-0 mt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50">
+                      <div className="bg-[#171b26] border border-white/5 rounded-lg shadow-2xl p-2 overflow-hidden">
+                        {item.items.map((subItem) => {
+                          const SubIcon = subItem.icon;
+                          const isSubActive = pathname === subItem.href;
+                          return (
+                            <Link key={subItem.name} href={subItem.href}>
+                              <div className={`flex items-start gap-3 p-3 rounded-md transition-colors ${
+                                isSubActive ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-gray-400 hover:text-white'
+                              }`}>
+                                <div className={`mt-0.5 shrink-0 ${isSubActive ? 'text-[#b06aee]' : 'text-gray-500'}`}>
+                                  <SubIcon className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <div className={`text-xs font-bold ${isSubActive ? 'text-white' : 'text-gray-300'}`}>{subItem.name}</div>
+                                  <div className="text-[10px] text-gray-500 mt-1">{subItem.desc}</div>
+                                </div>
+                              </div>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (

@@ -6,6 +6,10 @@ import {
   PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
+import { createClient } from '@/utils/supabase/client';
+
+
+const supabase = createClient();
 
 const ShipIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -28,13 +32,36 @@ export default function KelolaKapalPage() {
     { name: 'ANAGATA GUARDIAN', type: 'Bulk Carrier', status: 'En Route', kapten: 'Kapten Bambang Suryadi', tujuan: 'Santos', region: 'South America', fuel: '60.58154445936869%', statusColor: 'text-[#3b82f6]', statusBg: 'bg-[#3b82f6]/10' },
     { name: 'ANAGATA SENTINEL', type: 'Tanker', status: 'In Port', kapten: 'Kapten Arief Budiman', tujuan: 'Dubai', region: 'Middle East', fuel: '52%', statusColor: 'text-[#10b981]', statusBg: 'bg-[#10b981]/10' },
   ];
-
+  const [shipsData, setShipsData] = useState<any[]>([]);
   const [ships, setShips] = useState(defaultShips);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '', type: '', kapten: '', tujuan: '', region: '', status: '', fuel: '100'
   });
+
+  React.useEffect(() => {
+    const fetchKapal = async () => {
+      // 1. Minta data ke supabase
+      const { data, error } = await supabase.from('kapal').select('*');
+
+      if (data && !error) {
+        // 2. Format datanya (kasih warna)
+        const formattedData = data.map(ship => {
+          let statusColor = 'text-[#3b82f6]'; // default biru
+          let statusBg = 'bg-[#3b82f6]/10';   // default biru
+          // ... (pengecekan status kapal)
+          
+          return { ...ship, statusColor, statusBg };
+        });
+        
+        // 3. Masukkan data yang sudah rapi ke wadah React
+        setShipsData(formattedData);
+      }
+    };
+
+    fetchKapal(); // Jalankan pertama kali saat halaman dibuka
+  }, [supabase]);
 
   React.useEffect(() => {
     const saved = localStorage.getItem('anagata_ships');
@@ -88,6 +115,9 @@ export default function KelolaKapalPage() {
       setShips(newShips);
     }
   };
+  const totalKapal = shipsData.length;
+  const countEnRoute = shipsData.filter(s => s.status_kapal === 'En Route').length;
+
 
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">

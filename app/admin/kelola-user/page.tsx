@@ -9,76 +9,29 @@ import {
   ShieldCheckIcon,
   UserIcon,
 } from '@heroicons/react/24/outline';
+import { createClient } from '@/utils/supabase/client';
 
 export default function KelolaUserPage() {
-  const defaultUsers = [
-    {
-      id: 1,
-      name: 'Admin Anagata',
-      username: '@admin',
-      email: 'admin@anagataoceanics.com',
-      phone: '+62 21 1234 5678',
-      company: 'Anagata Oceanics',
-      location: 'Jakarta, Indonesia',
-      role: 'Admin',
-      status: 'Aktif',
-    },
-    {
-      id: 2,
-      name: 'Customer User',
-      username: '@user',
-      email: 'user@example.com',
-      phone: '+62 812 3456 7890',
-      company: 'PT. Example Corp',
-      location: 'Surabaya, Indonesia',
-      role: 'User',
-      status: 'Aktif',
-    },
-    {
-      id: 3,
-      name: 'John Doe',
-      username: '@johndoe',
-      email: 'john.doe@company.com',
-      phone: '+62 813 9876 5432',
-      company: 'ABC Company',
-      location: 'Bandung, Indonesia',
-      role: 'User',
-      status: 'Aktif',
-    },
-    {
-      id: 4,
-      name: 'Jane Doe',
-      username: '@janedoe',
-      email: 'jane.doe@business.com',
-      phone: '+62 814 5678 1234',
-      company: 'XYZ Business',
-      location: 'Medan, Indonesia',
-      role: 'User',
-      status: 'Aktif',
-    }
-  ];
-
-  const [users, setUsers] = useState(defaultUsers);
+  const supabase = createClient();
+  const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: ''
   });
 
-  React.useEffect(() => {
-    const saved = localStorage.getItem('anagata_users');
-    if (saved) {
-      try {
-        setUsers(JSON.parse(saved));
-      } catch (e) {
-        console.error(e);
-      }
+  const fetchUsers = async () => {
+    const { data, error } = await supabase.from('users').select('*').order('id', { ascending: false });
+    if (data && !error) {
+      setUsers(data);
+    } else if (error) {
+      console.error("Error fetching users:", error);
     }
-  }, []);
+  };
 
   React.useEffect(() => {
-    localStorage.setItem('anagata_users', JSON.stringify(users));
-  }, [users]);
+    fetchUsers();
+  }, [supabase]);
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -86,19 +39,37 @@ export default function KelolaUserPage() {
     user.username.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newUser = {
-      ...formData,
-      id: Date.now(),
-    };
-    setUsers([newUser, ...users]);
-    setIsModalOpen(false);
-    setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '' });
+    const { error } = await supabase.from('users').insert([{
+      username: formData.username,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      role: formData.role,
+      status: formData.status,
+      company: formData.company,
+      location: formData.location
+    }]);
+
+    if (!error) {
+      fetchUsers(); // Refresh data
+      setIsModalOpen(false);
+      setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '' });
+    } else {
+      alert("Gagal menambahkan user: " + error.message);
+    }
   };
 
-  const deleteUser = (id: number) => {
-    setUsers(users.filter(u => u.id !== id));
+  const deleteUser = async (id: number) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus user ini?')) {
+      const { error } = await supabase.from('users').delete().eq('id', id);
+      if (!error) {
+        fetchUsers();
+      } else {
+        alert("Gagal menghapus user: " + error.message);
+      }
+    }
   };
 
   return (
@@ -253,7 +224,7 @@ export default function KelolaUserPage() {
                       required 
                       value={formData.role} 
                       onChange={e => setFormData({...formData, role: e.target.value})}
-                      className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none cursor-pointer"
+                      className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none bg-none cursor-pointer"
                     >
                       <option value="" disabled>Pilih Role</option>
                       <option value="Admin">Admin</option>
@@ -271,7 +242,7 @@ export default function KelolaUserPage() {
                       required 
                       value={formData.status} 
                       onChange={e => setFormData({...formData, status: e.target.value})}
-                      className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none cursor-pointer"
+                      className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none bg-none cursor-pointer"
                     >
                       <option value="" disabled>Pilih Status</option>
                       <option value="Aktif">Aktif</option>
