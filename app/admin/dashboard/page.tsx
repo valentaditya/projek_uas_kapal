@@ -30,31 +30,38 @@ const AnchorIcon = ({ className }: { className?: string }) => (
 
 export default function DashboardPage() {
   const [shipsData, setShipsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
     const fetchKapal = async () => {
-      const { data, error } = await supabase
-        .from('kapal')
-        .select('*');
+      try {
+        const { data, error } = await supabase
+          .from('kapal')
+          .select('*');
 
-      if (data && !error) {
-        const formattedData = data.map(ship => {
-          let statusColor = 'text-[#3b82f6]'; 
-          let statusBg = 'bg-[#3b82f6]/10';   
-          
-          if (ship.status_kapal === 'En Route') { statusColor = 'text-[#3b82f6]'; statusBg = 'bg-[#3b82f6]/10'; }
-          else if (ship.status_kapal === 'In Port') { statusColor = 'text-[#10b981]'; statusBg = 'bg-[#10b981]/10'; }
-          else if (ship.status_kapal === 'Delayed') { statusColor = 'text-[#eab308]'; statusBg = 'bg-[#eab308]/10'; }
-          else if (ship.status_kapal === 'Maintenance') { statusColor = 'text-[#f97316]'; statusBg = 'bg-[#f97316]/10'; }
+        if (data && !error) {
+          const formattedData = data.map(ship => {
+            let statusColor = 'text-[#3b82f6]'; 
+            let statusBg = 'bg-[#3b82f6]/10';   
+            
+            if (ship.status_kapal === 'En Route') { statusColor = 'text-[#3b82f6]'; statusBg = 'bg-[#3b82f6]/10'; }
+            else if (ship.status_kapal === 'In Port') { statusColor = 'text-[#10b981]'; statusBg = 'bg-[#10b981]/10'; }
+            else if (ship.status_kapal === 'Delayed') { statusColor = 'text-[#eab308]'; statusBg = 'bg-[#eab308]/10'; }
+            else if (ship.status_kapal === 'Maintenance') { statusColor = 'text-[#f97316]'; statusBg = 'bg-[#f97316]/10'; }
 
-          return {
-            ...ship,
-            statusColor,
-            statusBg
-          };
-        });
-        setShipsData(formattedData);
+            return {
+              ...ship,
+              statusColor,
+              statusBg
+            };
+          });
+          setShipsData(formattedData);
+        }
+      } catch (e) {
+        console.error("Failed to fetch kapal:", e);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -84,7 +91,11 @@ export default function DashboardPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">TOTAL KAPAL</p>
-            <p className="text-4xl font-black text-[#b06aee]">{totalKapal}</p>
+            {loading ? (
+              <div className="h-9 w-12 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#b06aee]">{totalKapal}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#b06aee]/10 flex items-center justify-center">
             <ShipIcon className="w-6 h-6 text-[#b06aee]" />
@@ -94,7 +105,11 @@ export default function DashboardPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">EN ROUTE</p>
-            <p className="text-4xl font-black text-[#3b82f6]">{countEnRoute}</p>
+            {loading ? (
+              <div className="h-9 w-12 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#3b82f6]">{countEnRoute}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#3b82f6]/10 flex items-center justify-center">
             <ArrowTrendingUpIcon className="w-6 h-6 text-[#3b82f6]" />
@@ -104,7 +119,11 @@ export default function DashboardPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">IN PORT</p>
-            <p className="text-4xl font-black text-[#06b6d4]">{countInPort}</p>
+            {loading ? (
+              <div className="h-9 w-12 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#06b6d4]">{countInPort}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#06b6d4]/10 flex items-center justify-center">
             <AnchorIcon className="w-6 h-6 text-[#06b6d4]" />
@@ -114,7 +133,11 @@ export default function DashboardPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">DELAYED</p>
-            <p className="text-4xl font-black text-[#eab308]">{countDelayed}</p>
+            {loading ? (
+              <div className="h-9 w-12 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#eab308]">{countDelayed}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#eab308]/10 flex items-center justify-center">
             <ClockIcon className="w-6 h-6 text-[#eab308]" />
@@ -124,7 +147,11 @@ export default function DashboardPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">MAINTENANCE</p>
-            <p className="text-4xl font-black text-[#f97316]">{countMaintenance}</p>
+            {loading ? (
+              <div className="h-9 w-12 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#f97316]">{countMaintenance}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#f97316]/10 flex items-center justify-center">
             <WrenchScrewdriverIcon className="w-6 h-6 text-[#f97316]" />
@@ -133,42 +160,74 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
-        {shipsData.map((ship, idx) => (
-          <div key={idx} className="bg-[#151922] border border-white/5 rounded-[10px] p-6">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded bg-[#b06aee]/10 flex items-center justify-center border border-[#b06aee]/20 shrink-0">
-                  <ShipIcon className="w-4 h-4 text-[#b06aee]" />
+        {loading ? (
+          Array.from({ length: 6 }).map((_, idx) => (
+            <div key={idx} className="bg-[#151922] border border-white/5 rounded-[10px] p-6 flex flex-col justify-between h-[180px]">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded bg-white/5 animate-pulse border border-white/5 shrink-0" />
+                  <div className="space-y-2">
+                    <div className="w-32 h-4 bg-white/5 animate-pulse rounded" />
+                    <div className="w-20 h-3 bg-white/5 animate-pulse rounded" />
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-gray-200 font-bold tracking-wide text-xs">{ship.nama_kapal}</h3>
-                  <p className="text-[10px] text-gray-500">{ship.tipe_kapal}</p>
-                </div>
+                <div className="w-20 h-5 bg-white/5 animate-pulse rounded" />
               </div>
-              <div className={`px-2 py-1 rounded text-[10px] font-semibold flex-shrink-0 ${ship.statusBg} ${ship.statusColor}`}>
-                {ship.status_kapal}
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-[11px] text-gray-400">
-                <span>Kapten:</span>
-                <span className="text-gray-200 font-mono tracking-tight font-medium text-right max-w-[130px] truncate">{ship.nama_kapten}</span>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-gray-400">
-                <MapPinIcon className="w-3.5 h-3.5 shrink-0" /> 
-                <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.tujuan_kapal}</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px] text-gray-400">
-                <div className="flex items-center gap-2">
-                  <BoltIcon className="w-3.5 h-3.5 shrink-0" />
-                  <span>Fuel:</span>
+              <div className="space-y-3 mt-4">
+                <div className="flex justify-between items-center">
+                  <div className="w-12 h-3 bg-white/5 animate-pulse rounded" />
+                  <div className="w-24 h-3 bg-white/5 animate-pulse rounded" />
                 </div>
-                <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.fuel_kapal ?? 0} %</span>
+                <div className="flex justify-between items-center">
+                  <div className="w-16 h-3 bg-white/5 animate-pulse rounded" />
+                  <div className="w-32 h-3 bg-white/5 animate-pulse rounded" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="w-10 h-3 bg-white/5 animate-pulse rounded" />
+                  <div className="w-16 h-3 bg-white/5 animate-pulse rounded" />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          shipsData.map((ship, idx) => (
+            <div key={idx} className="bg-[#151922] border border-white/5 rounded-[10px] p-6">
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded bg-[#b06aee]/10 flex items-center justify-center border border-[#b06aee]/20 shrink-0">
+                    <ShipIcon className="w-4 h-4 text-[#b06aee]" />
+                  </div>
+                  <div>
+                    <h3 className="text-gray-200 font-bold tracking-wide text-xs">{ship.nama_kapal}</h3>
+                    <p className="text-[10px] text-gray-500">{ship.tipe_kapal}</p>
+                  </div>
+                </div>
+                <div className={`px-2 py-1 rounded text-[10px] font-semibold flex-shrink-0 ${ship.statusBg} ${ship.statusColor}`}>
+                  {ship.status_kapal}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-[11px] text-gray-400">
+                  <span>Kapten:</span>
+                  <span className="text-gray-200 font-mono tracking-tight font-medium text-right max-w-[130px] truncate">{ship.nama_kapten}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                  <MapPinIcon className="w-3.5 h-3.5 shrink-0" /> 
+                  <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.tujuan_kapal}</span>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <BoltIcon className="w-3.5 h-3.5 shrink-0" />
+                    <span>Fuel:</span>
+                  </div>
+                  <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.fuel_kapal ?? 0} %</span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </main>
   );

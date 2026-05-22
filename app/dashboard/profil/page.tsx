@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   UserCircleIcon, 
   ShieldCheckIcon, 
@@ -12,28 +12,90 @@ import {
   BuildingOfficeIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import Swal from 'sweetalert2';
+import { createClient } from '../../../utils/supabase/client';
 
 export default function ProfilPage() {
-  const [user, setUser] = useState({
-    name: 'Customer User',
+  const [user, setUser] = useState<any>({
+    nama_lengkap: 'Customer User',
     email: 'customer.user@email.com',
-    phone: '+62 812 3456 7890',
-    address: 'Jakarta, Indonesia',
-    company: 'PT. Example Company'
+    no_telepon: '+62 812 3456 7890',
+    alamat: 'Jakarta, Indonesia',
+    perusahaan: 'PT. Example Company'
   });
 
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(user);
+  const [formData, setFormData] = useState<any>({});
+
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return decodeURIComponent(parts.pop()!.split(';').shift()!);
+      return null;
+    };
+
+    const session = getCookie('session_user');
+    if (session) {
+      try {
+        const parsedUser = JSON.parse(session);
+        setUser(parsedUser);
+      } catch (e) {
+        console.error("Error parsing user session:", e);
+      }
+    }
+  }, []);
 
   const handleEditClick = () => {
-    setFormData(user);
+    setFormData({ ...user });
     setIsEditing(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUser(formData);
+    
+    Swal.fire({
+      title: 'Menyimpan perubahan...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    const supabase = createClient();
+    
+    const { error } = await supabase
+      .from('user')
+      .update({
+        nama_lengkap: formData.nama_lengkap,
+        email: formData.email,
+        no_telepon: formData.no_telepon,
+        alamat: formData.alamat,
+        perusahaan: formData.perusahaan
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal Menyimpan',
+        text: error.message
+      });
+      return;
+    }
+
+    const updatedUser = { ...user, ...formData };
+    setUser(updatedUser);
+    document.cookie = `session_user=${encodeURIComponent(JSON.stringify(updatedUser))}; path=/; max-age=86400; SameSite=Lax`;
     setIsEditing(false);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil',
+      text: 'Profil berhasil diperbarui!',
+      timer: 2000,
+      showConfirmButton: false
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +127,7 @@ export default function ProfilPage() {
           <div className="w-20 h-20 rounded-full bg-[#1e1a2b] flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-[#b06aee]/30">
             <UserIcon className="w-10 h-10 text-[#b06aee]" />
           </div>
-          <h3 className="text-lg font-bold text-white tracking-wider mb-2">{user.name}</h3>
+          <h3 className="text-lg font-bold text-white tracking-wider mb-2">{user.nama_lengkap || user.username}</h3>
           <p className="text-xs text-gray-500 font-mono tracking-tight mb-6">{user.email}</p>
           <div className="flex items-center gap-2 text-[#10b981]">
             <ShieldCheckIcon className="w-4 h-4" />
@@ -81,7 +143,7 @@ export default function ProfilPage() {
               <UserIcon className="w-4 h-4 text-[#b06aee] mt-0.5" />
               <div>
                 <p className="text-[10px] text-gray-400 mb-1">Nama Lengkap</p>
-                <p className="text-xs text-white font-semibold font-mono tracking-tight">{user.name}</p>
+                <p className="text-xs text-white font-semibold font-mono tracking-tight">{user.nama_lengkap}</p>
               </div>
             </div>
 
@@ -97,7 +159,7 @@ export default function ProfilPage() {
               <PhoneIcon className="w-4 h-4 text-[#10b981] mt-0.5" />
               <div>
                 <p className="text-[10px] text-gray-400 mb-1">No. Telepon</p>
-                <p className="text-xs text-white font-semibold font-mono tracking-tight">{user.phone}</p>
+                <p className="text-xs text-white font-semibold font-mono tracking-tight">{user.no_telepon}</p>
               </div>
             </div>
 
@@ -105,7 +167,7 @@ export default function ProfilPage() {
               <MapPinIcon className="w-4 h-4 text-[#10b981] mt-0.5" />
               <div>
                 <p className="text-[10px] text-gray-400 mb-1">Alamat</p>
-                <p className="text-xs text-white font-semibold font-mono tracking-tight">{user.address}</p>
+                <p className="text-xs text-white font-semibold font-mono tracking-tight">{user.alamat || '-'}</p>
               </div>
             </div>
 
@@ -113,7 +175,7 @@ export default function ProfilPage() {
               <BuildingOfficeIcon className="w-4 h-4 text-[#b06aee] mt-0.5" />
               <div>
                 <p className="text-[10px] text-gray-400 mb-1">Perusahaan</p>
-                <p className="text-xs text-white font-semibold font-mono tracking-tight">{user.company}</p>
+                <p className="text-xs text-white font-semibold font-mono tracking-tight">{user.perusahaan || '-'}</p>
               </div>
             </div>
           </div>
@@ -155,8 +217,8 @@ export default function ProfilPage() {
                 <label className="block text-xs text-gray-400 mb-1 font-mono">Nama Lengkap</label>
                 <input 
                   type="text" 
-                  name="name"
-                  value={formData.name}
+                  name="nama_lengkap"
+                  value={formData.nama_lengkap || ''}
                   onChange={handleChange}
                   className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
                   required
@@ -168,7 +230,7 @@ export default function ProfilPage() {
                 <input 
                   type="email" 
                   name="email"
-                  value={formData.email}
+                  value={formData.email || ''}
                   onChange={handleChange}
                   className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
                   required
@@ -179,8 +241,8 @@ export default function ProfilPage() {
                 <label className="block text-xs text-gray-400 mb-1 font-mono">No. Telepon</label>
                 <input 
                   type="text" 
-                  name="phone"
-                  value={formData.phone}
+                  name="no_telepon"
+                  value={formData.no_telepon || ''}
                   onChange={handleChange}
                   className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
                   required
@@ -191,8 +253,8 @@ export default function ProfilPage() {
                 <label className="block text-xs text-gray-400 mb-1 font-mono">Alamat</label>
                 <input 
                   type="text" 
-                  name="address"
-                  value={formData.address}
+                  name="alamat"
+                  value={formData.alamat || ''}
                   onChange={handleChange}
                   className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
                   required
@@ -203,8 +265,8 @@ export default function ProfilPage() {
                 <label className="block text-xs text-gray-400 mb-1 font-mono">Perusahaan</label>
                 <input 
                   type="text" 
-                  name="company"
-                  value={formData.company}
+                  name="perusahaan"
+                  value={formData.perusahaan || ''}
                   onChange={handleChange}
                   className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
                   required

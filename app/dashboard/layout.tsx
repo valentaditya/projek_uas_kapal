@@ -19,31 +19,38 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const supabase = createClient();
-      const { data: { user }, error } = await supabase.auth.getUser();
+    const checkAuth = () => {
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop()!.split(';').shift()!);
+        return null;
+      };
 
-      if (error || !user) {
+      const session = getCookie('session_user');
+      if (!session) {
         router.replace('/login');
         return;
       }
 
-      if (user.email && user.email.endsWith('@adminnav.com')) {
-        router.replace('/admin/dashboard');
-        return;
+      try {
+        const user = JSON.parse(session);
+        if (user.role !== 'User') {
+          router.replace('/admin/dashboard');
+          return;
+        }
+        setUsername(user.nama_lengkap || user.username || 'User');
+        setIsLoading(false);
+      } catch (e) {
+        router.replace('/login');
       }
-
-      if (user.user_metadata?.username) {
-        setUsername(user.user_metadata.username);
-      }
-      setIsLoading(false);
     };
-    fetchUser();
+    checkAuth();
   }, [router]);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    // Clear session cookie
+    document.cookie = "session_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     router.push('/login');
   };
 

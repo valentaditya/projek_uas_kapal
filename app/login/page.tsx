@@ -17,6 +17,29 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showRePassword, setShowRePassword] = useState(false);
 
+  React.useEffect(() => {
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return decodeURIComponent(parts.pop()!.split(';').shift()!);
+      return null;
+    };
+    
+    const session = getCookie('session_user');
+    if (session) {
+      try {
+        const user = JSON.parse(session);
+        if (user.role === 'Admin') {
+          router.replace('/admin/dashboard');
+        } else {
+          router.replace('/dashboard');
+        }
+      } catch (e) {
+        // ignore invalid json
+      }
+    }
+  }, [router]);
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -33,42 +56,75 @@ export default function LoginPage() {
 
     const supabase = createClient();
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // Query custom user table by email or username
+    const { data: userData, error } = await supabase
+      .from('user')
+      .select('*')
+      .or(`email.eq."${email}",username.eq."${email}"`)
+      .maybeSingle();
 
-    if (error) {
+    if (error || !userData) {
       Swal.fire({
         position: "center",
         icon: "error",
         title: "Login Gagal",
-        text: "Username atau Password anda salah",
+        text: "Username/Email tidak terdaftar",
         showConfirmButton: false,
         timer: 2000,
         theme: 'auto'
       });
-    } else {
-      Swal.mixin({
-        toast: true,
-        position: "top-end",
+      return;
+    }
+
+    if (userData.password !== password) {
+      Swal.fire({
+        position: "center",
+        icon: "error",
+        title: "Login Gagal",
+        text: "Password yang Anda masukkan salah",
         showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        theme: 'auto',
-        didOpen: (toast) => {
-          toast.onmouseenter = Swal.stopTimer;
-          toast.onmouseleave = Swal.resumeTimer;
-        }
-      }).fire({
-        icon: "success",
-        title: "Signed in successfully"
+        timer: 2000,
+        theme: 'auto'
       });
-      if (email && email.endsWith('@adminnav.com')) {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/dashboard');
+      return;
+    }
+
+    if (userData.status !== 'Aktif') {
+      Swal.fire({
+        position: "center",
+        icon: "error",
+        title: "Login Gagal",
+        text: "Status akun Anda tidak aktif",
+        showConfirmButton: false,
+        timer: 2000,
+        theme: 'auto'
+      });
+      return;
+    }
+
+    // Set local cookie for session storage
+    document.cookie = `session_user=${encodeURIComponent(JSON.stringify(userData))}; path=/; max-age=86400; SameSite=Lax`;
+
+    Swal.mixin({
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      theme: 'auto',
+      didOpen: (toast) => {
+        toast.onmouseenter = Swal.stopTimer;
+        toast.onmouseleave = Swal.resumeTimer;
       }
+    }).fire({
+      icon: "success",
+      title: "Signed in successfully"
+    });
+
+    if (userData.role === 'Admin') {
+      router.push('/admin/dashboard');
+    } else {
+      router.push('/dashboard');
     }
   };
 
@@ -101,22 +157,52 @@ export default function LoginPage() {
 
     const supabase = createClient();
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username: username,
-          phone: phone,
-        }
-      }
-    });
+    // Check if username or email already exists in custom DB
+    const { data: existingUser, error: checkError } = await supabase
+      .from('user')
+      .select('id')
+      .or(`email.eq."${email}",username.eq."${username}"`);
 
-    if (error) {
+    if (checkError) {
       Swal.fire({
         icon: "error",
         title: "Gagal Mendaftar",
-        text: error.message,
+        text: "Terjadi kesalahan saat memeriksa akun: " + checkError.message,
+        theme: "auto"
+      });
+      return;
+    }
+
+    if (existingUser && existingUser.length > 0) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Mendaftar",
+        text: "Username atau Email sudah terdaftar",
+        theme: "auto"
+      });
+      return;
+    }
+
+    // Insert new user into database
+    const { error: insertError } = await supabase
+      .from('user')
+      .insert([
+        {
+          username: username,
+          nama_lengkap: username, // defaults to username
+          email: email,
+          no_telepon: phone,
+          password: password,
+          role: 'User',
+          status: 'Aktif'
+        }
+      ]);
+
+    if (insertError) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal Mendaftar",
+        text: insertError.message,
         theme: "auto"
       });
       return;

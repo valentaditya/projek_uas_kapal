@@ -34,6 +34,7 @@ export default function KelolaKapalPage() {
   ];
   const [shipsData, setShipsData] = useState<any[]>([]);
   const [ships, setShips] = useState(defaultShips);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -72,6 +73,10 @@ export default function KelolaKapalPage() {
         console.error(e);
       }
     }
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   React.useEffect(() => {
@@ -146,52 +151,93 @@ export default function KelolaKapalPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
-        {filteredShips.map((ship, idx) => (
-          <div key={idx} className="bg-[#151922] border border-white/5 rounded-[10px] p-6 flex flex-col h-full">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 rounded bg-[#b06aee]/10 flex items-center justify-center border border-[#b06aee]/20 shrink-0">
-                <ShipIcon className="w-4 h-4 text-[#b06aee]" />
+        {loading ? (
+          Array.from({ length: 8 }).map((_, idx) => (
+            <div key={idx} className="bg-[#151922] border border-white/5 rounded-[10px] p-6 flex flex-col h-full min-h-[220px] justify-between">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded bg-white/5 animate-pulse shrink-0" />
+                <div className="space-y-2">
+                  <div className="w-24 h-4 bg-white/5 animate-pulse rounded" />
+                  <div className="w-16 h-3 bg-white/5 animate-pulse rounded" />
+                </div>
               </div>
-              <div>
-                <h3 className="text-gray-200 font-bold tracking-wide text-xs">{ship.name}</h3>
-                <p className="text-[10px] text-gray-500">{ship.type}</p>
-              </div>
-            </div>
 
-            <div className="space-y-4 flex-1">
-              <div className="flex justify-between items-center text-[11px] text-gray-400">
-                <span>Kapten:</span>
-                <span className="text-gray-200 font-mono tracking-tight font-medium text-right max-w-[130px] truncate">{ship.kapten}</span>
+              <div className="space-y-4 flex-1">
+                <div className="flex justify-between items-center">
+                  <div className="w-12 h-3.5 bg-white/5 animate-pulse rounded" />
+                  <div className="w-24 h-3.5 bg-white/5 animate-pulse rounded" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="w-12 h-3.5 bg-white/5 animate-pulse rounded" />
+                  <div className="w-20 h-3.5 bg-white/5 animate-pulse rounded" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="w-12 h-3.5 bg-white/5 animate-pulse rounded" />
+                  <div className="w-16 h-3.5 bg-white/5 animate-pulse rounded" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="w-10 h-3.5 bg-white/5 animate-pulse rounded" />
+                  <div className="w-12 h-3.5 bg-white/5 animate-pulse rounded" />
+                </div>
               </div>
-              <div className="flex justify-between items-center text-[11px] text-gray-400">
-                <span>Tujuan:</span>
-                <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.tujuan}</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px] text-gray-400">
-                <span>Region:</span>
-                <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.region}</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px] text-gray-400">
-                <span>Fuel:</span>
-                <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.fuel}</span>
-              </div>
-            </div>
 
-            <div className="mt-6 flex justify-between items-center">
-              <div className={`px-2 py-1 rounded text-[10px] font-semibold flex-shrink-0 ${ship.statusBg} ${ship.statusColor}`}>
-                {ship.status}
-              </div>
-              <div className="flex gap-2">
-                <button className="p-1.5 text-gray-400 hover:text-[#b06aee] transition-colors rounded hover:bg-white/5">
-                  <PencilSquareIcon className="w-4 h-4" />
-                </button>
-                <button onClick={() => deleteShip(idx)} className="p-1.5 text-gray-400 hover:text-rose-400 transition-colors rounded hover:bg-white/5">
-                  <TrashIcon className="w-4 h-4" />
-                </button>
+              <div className="mt-6 flex justify-between items-center">
+                <div className="w-16 h-5 bg-white/5 animate-pulse rounded" />
+                <div className="flex gap-2">
+                  <div className="w-7 h-7 rounded bg-white/5 animate-pulse" />
+                  <div className="w-7 h-7 rounded bg-white/5 animate-pulse" />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          filteredShips.map((ship, idx) => (
+            <div key={idx} className="bg-[#151922] border border-white/5 rounded-[10px] p-6 flex flex-col h-full">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded bg-[#b06aee]/10 flex items-center justify-center border border-[#b06aee]/20 shrink-0">
+                  <ShipIcon className="w-4 h-4 text-[#b06aee]" />
+                </div>
+                <div>
+                  <h3 className="text-gray-200 font-bold tracking-wide text-xs">{ship.name}</h3>
+                  <p className="text-[10px] text-gray-500">{ship.type}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 flex-1">
+                <div className="flex justify-between items-center text-[11px] text-gray-400">
+                  <span>Kapten:</span>
+                  <span className="text-gray-200 font-mono tracking-tight font-medium text-right max-w-[130px] truncate">{ship.kapten}</span>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-gray-400">
+                  <span>Tujuan:</span>
+                  <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.tujuan}</span>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-gray-400">
+                  <span>Region:</span>
+                  <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.region}</span>
+                </div>
+                <div className="flex justify-between items-center text-[11px] text-gray-400">
+                  <span>Fuel:</span>
+                  <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.fuel}</span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-between items-center">
+                <div className={`px-2 py-1 rounded text-[10px] font-semibold flex-shrink-0 ${ship.statusBg} ${ship.statusColor}`}>
+                  {ship.status}
+                </div>
+                <div className="flex gap-2">
+                  <button className="p-1.5 text-gray-400 hover:text-[#b06aee] transition-colors rounded hover:bg-white/5">
+                    <PencilSquareIcon className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => deleteShip(idx)} className="p-1.5 text-gray-400 hover:text-rose-400 transition-colors rounded hover:bg-white/5">
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {isModalOpen && (
