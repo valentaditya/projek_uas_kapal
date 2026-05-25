@@ -10,6 +10,8 @@ import {
   PaperAirplaneIcon,
   UserIcon,
   ArrowRightOnRectangleIcon,
+  Bars3Icon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 
 export default function UserDashboardLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +19,7 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
   const pathname = usePathname();
   const [username, setUsername] = useState('Customer User');
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -103,7 +106,7 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
             })}
           </div>
 
-          <div className="flex items-center gap-4 text-xs">
+          <div className="hidden lg:flex items-center gap-4 text-xs">
             <div className="flex items-center gap-3">
               <span className="font-bold text-gray-300">{username}</span>
               <div className="h-4 w-[1px] bg-white/10"></div>
@@ -117,8 +120,108 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
               <span className="hidden sm:inline">Keluar</span>
             </button>
           </div>
+
+          {/* Mobile Hamburguer Menu Button */}
+          <div className="flex lg:hidden items-center">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 text-gray-400 hover:text-white transition-colors"
+              aria-label="Buka menu"
+            >
+              <Bars3Icon className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </nav>
+
+      {/* Mobile Drawer Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          
+          {/* Drawer Content */}
+          <div className="relative ml-auto w-full max-w-xs h-full bg-[#12111d] border-l border-purple-500/20 p-6 flex flex-col justify-between shadow-2xl z-10 animate-slide-in">
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between pb-6 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 relative flex items-center justify-center">
+                    <Image src="/profile/icon.png" alt="Logo" width={24} height={24} className="object-contain" />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#b06aee] to-cyan-400 text-sm tracking-widest leading-tight">
+                      ANAGATA
+                    </h2>
+                    <p className="text-[8px] text-gray-500 tracking-wider uppercase">Menu Pengguna</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 text-gray-400 hover:text-white transition-colors"
+                  aria-label="Tutup menu"
+                >
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Profile Account Info */}
+              <div className="py-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-[#b06aee] font-bold text-xs uppercase">
+                    {username.charAt(0)}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-200 text-xs">{username}</span>
+                    <span className="text-[9px] text-gray-500 tracking-wider uppercase font-semibold mt-0.5">PENGGUNA</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation Menu */}
+              <div className="py-4 space-y-2 max-h-[55vh] overflow-y-auto custom-scrollbar">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = pathname === link.path;
+                  return (
+                    <Link 
+                      key={link.name} 
+                      href={link.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <div className={`flex items-center gap-3 px-3 py-2.5 rounded transition-colors text-xs ${
+                        isActive 
+                          ? 'bg-[#b06aee]/20 text-white font-bold' 
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}>
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span>{link.name}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <div className="pt-4 border-t border-white/10">
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 transition-colors text-xs font-bold font-mono tracking-wider"
+              >
+                <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                <span>KELUAR</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {children}
     </div>

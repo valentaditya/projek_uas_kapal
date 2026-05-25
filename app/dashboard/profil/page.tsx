@@ -26,6 +26,11 @@ export default function ProfilPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<any>({});
+  const [stats, setStats] = useState({
+    total: 0,
+    proses: 0,
+    selesai: 0
+  });
 
   useEffect(() => {
     const getCookie = (name: string) => {
@@ -35,11 +40,36 @@ export default function ProfilPage() {
       return null;
     };
 
+    const fetchUserStats = async (userId: number) => {
+      const supabase = createClient();
+      try {
+        const { data, error } = await supabase
+          .from('detail_pengiriman')
+          .select('id_pengiriman, pengiriman(status)')
+          .eq('id_user', userId);
+
+        if (data && !error) {
+          const total = data.length;
+          const proses = data.filter((d: any) => 
+            d.pengiriman && (d.pengiriman.status === 'Menunggu Persetujuan' || d.pengiriman.status === 'Disetujui' || d.pengiriman.status === 'Dalam Perjalanan')
+          ).length;
+          const selesai = data.filter((d: any) => d.pengiriman && d.pengiriman.status === 'Terkirim').length;
+
+          setStats({ total, proses, selesai });
+        }
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+      }
+    };
+
     const session = getCookie('session_user');
     if (session) {
       try {
         const parsedUser = JSON.parse(session);
         setUser(parsedUser);
+        if (parsedUser?.id) {
+          fetchUserStats(parsedUser.id);
+        }
       } catch (e) {
         console.error("Error parsing user session:", e);
       }
@@ -186,17 +216,17 @@ export default function ProfilPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
         <div className="bg-[#151922] border border-white/5 rounded-lg p-5 relative overflow-hidden">
           <p className="text-[10px] text-gray-400 mb-2 font-mono">Total Pengiriman</p>
-          <p className="text-3xl font-black text-[#b06aee]">12</p>
+          <p className="text-3xl font-black text-[#b06aee]">{stats.total}</p>
         </div>
 
         <div className="bg-[#151922] border border-white/5 rounded-lg p-5 relative overflow-hidden">
           <p className="text-[10px] text-gray-400 mb-2 font-mono">Dalam Proses</p>
-          <p className="text-3xl font-black text-[#3b82f6]">3</p>
+          <p className="text-3xl font-black text-[#3b82f6]">{stats.proses}</p>
         </div>
 
         <div className="bg-[#151922] border border-white/5 rounded-lg p-5 relative overflow-hidden">
           <p className="text-[10px] text-gray-400 mb-2 font-mono">Selesai</p>
-          <p className="text-3xl font-black text-[#10b981]">9</p>
+          <p className="text-3xl font-black text-[#10b981]">{stats.selesai}</p>
         </div>
       </div>
 

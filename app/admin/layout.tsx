@@ -17,6 +17,8 @@ import {
   CheckIcon,
   ExclamationTriangleIcon,
   ChevronDownIcon,
+  Bars3Icon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 
 const ShipIcon = ({ className }: { className?: string }) => (
@@ -60,6 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [username, setUsername] = useState('Admin Logistik');
   const [isLoading, setIsLoading] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -213,7 +216,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
           </div>
 
-          <div className="flex items-center gap-4 text-xs">
+          <div className="hidden lg:flex items-center gap-4 text-xs">
             <div className="flex flex-col items-end">
               <span className="font-bold text-gray-300">{username}</span>
               <div className="flex items-center gap-1">
@@ -278,8 +281,169 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
+
+          {/* Mobile Hamburguer Menu Button */}
+          <div className="flex lg:hidden items-center">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 text-gray-400 hover:text-white transition-colors"
+              aria-label="Buka menu"
+            >
+              <Bars3Icon className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </nav>
+
+      {/* Mobile Drawer Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          
+          {/* Drawer Content */}
+          <div className="relative ml-auto w-full max-w-xs h-full bg-[#12111d] border-l border-purple-500/20 p-6 flex flex-col justify-between shadow-2xl z-10 animate-slide-in">
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between pb-6 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 relative flex items-center justify-center">
+                    <Image src="/profile/icon.png" alt="Logo" width={24} height={24} className="object-contain" />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 text-sm tracking-widest leading-tight">
+                      ANAGATA
+                    </h2>
+                    <p className="text-[8px] text-gray-500 tracking-wider uppercase">Menu Admin</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 text-gray-400 hover:text-white transition-colors"
+                  aria-label="Tutup menu"
+                >
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Profile Account Info */}
+              <div className="py-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-[#b06aee] font-bold text-xs uppercase">
+                    {username.charAt(0)}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-200 text-xs">{username}</span>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] animate-pulse"></div>
+                      <span className="text-[9px] text-green-500 tracking-wider uppercase font-semibold">ONLINE</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation Menu */}
+              <div className="py-4 space-y-4 max-h-[45vh] overflow-y-auto custom-scrollbar">
+                {navItems.map((item) => {
+                  if (item.isMega && item.items) {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.name} className="space-y-1">
+                        <div className="text-[9px] text-gray-500 uppercase tracking-widest px-2 font-bold flex items-center gap-1.5">
+                          <Icon className="w-3.5 h-3.5" />
+                          <span>{item.name}</span>
+                        </div>
+                        <div className="space-y-0.5 pl-2 border-l border-white/5 ml-3">
+                          {item.items.map((subItem) => {
+                            const SubIcon = subItem.icon;
+                            const isSubActive = pathname === subItem.href;
+                            return (
+                              <Link 
+                                key={subItem.name} 
+                                href={subItem.href}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                              >
+                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded transition-colors text-xs ${
+                                  isSubActive 
+                                    ? 'bg-[#b06aee]/20 text-white font-bold' 
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                }`}>
+                                  <SubIcon className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{subItem.name}</span>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link 
+                      key={item.name} 
+                      href={item.href || '#'}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <div className={`flex items-center gap-3 px-2 py-2 rounded transition-colors text-xs ${
+                        isActive 
+                          ? 'bg-[#b06aee]/20 text-white font-bold' 
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}>
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span>{item.name}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+
+                {/* Notifications Accordion/Preview */}
+                <div className="pt-2 border-t border-white/5">
+                  <div className="text-[9px] text-gray-500 uppercase tracking-widest px-2 font-bold mb-2 flex justify-between items-center">
+                    <span>Notifikasi</span>
+                    <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold">4</span>
+                  </div>
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 px-2 custom-scrollbar">
+                    {notifications.slice(0, 3).map((notif) => {
+                      const Icon = notif.icon;
+                      return (
+                        <div key={notif.id} className="p-2 bg-white/[0.02] border border-white/5 rounded text-[10px] flex gap-2">
+                          <div className={`shrink-0 mt-0.5 ${notif.iconColor}`}>
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-gray-300">{notif.title}</div>
+                            <div className="text-gray-500 mt-0.5 leading-tight text-[9px]">{notif.message}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <div className="pt-4 border-t border-white/10">
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 transition-colors text-xs font-bold font-mono tracking-wider"
+              >
+                <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                <span>LOGOUT</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1">
         {children}

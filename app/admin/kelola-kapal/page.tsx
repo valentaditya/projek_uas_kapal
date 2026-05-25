@@ -7,7 +7,7 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { createClient } from '@/utils/supabase/client';
-
+import Swal from 'sweetalert2';
 
 const supabase = createClient();
 
@@ -22,107 +22,216 @@ const ShipIcon = ({ className }: { className?: string }) => (
 );
 
 export default function KelolaKapalPage() {
-  const defaultShips = [
-    { name: 'ANAGATA PIONEER', type: 'Container', status: 'En Route', kapten: 'Kapten Budi Santoso', tujuan: 'Los Angeles', region: 'Pacific', fuel: '71.235866115601%', statusColor: 'text-[#3b82f6]', statusBg: 'bg-[#3b82f6]/10' },
-    { name: 'ANAGATA OCEAN', type: 'Bulk Carrier', status: 'In Port', kapten: 'Kapten Agus Wijaya', tujuan: 'Singapore', region: 'Southeast Asia', fuel: '45%', statusColor: 'text-[#10b981]', statusBg: 'bg-[#10b981]/10' },
-    { name: 'ANAGATA WAVE', type: 'Tanker', status: 'Delayed', kapten: 'Kapten Andi Pratama', tujuan: 'Sydney', region: 'Oceania', fuel: '62%', statusColor: 'text-[#eab308]', statusBg: 'bg-[#eab308]/10' },
-    { name: 'ANAGATA VOYAGER', type: 'Container', status: 'En Route', kapten: 'Kapten Hendra Kusuma', tujuan: 'Rotterdam', region: 'Europe', fuel: '76.73535526938965%', statusColor: 'text-[#3b82f6]', statusBg: 'bg-[#3b82f6]/10' },
-    { name: 'ANAGATA HORIZON', type: 'Ro-Ro', status: 'Maintenance', kapten: 'Kapten Dedi Setiawan', tujuan: 'New York', region: 'North America', fuel: '35%', statusColor: 'text-[#f97316]', statusBg: 'bg-[#f97316]/10' },
-    { name: 'ANAGATA NAVIGATOR', type: 'Container', status: 'En Route', kapten: 'Kapten Rudi Hartono', tujuan: 'Hong Kong', region: 'East Asia', fuel: '64.24044533047322%', statusColor: 'text-[#3b82f6]', statusBg: 'bg-[#3b82f6]/10' },
-    { name: 'ANAGATA GUARDIAN', type: 'Bulk Carrier', status: 'En Route', kapten: 'Kapten Bambang Suryadi', tujuan: 'Santos', region: 'South America', fuel: '60.58154445936869%', statusColor: 'text-[#3b82f6]', statusBg: 'bg-[#3b82f6]/10' },
-    { name: 'ANAGATA SENTINEL', type: 'Tanker', status: 'In Port', kapten: 'Kapten Arief Budiman', tujuan: 'Dubai', region: 'Middle East', fuel: '52%', statusColor: 'text-[#10b981]', statusBg: 'bg-[#10b981]/10' },
-  ];
-  const [shipsData, setShipsData] = useState<any[]>([]);
-  const [ships, setShips] = useState(defaultShips);
+  const [ships, setShips] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingShip, setEditingShip] = useState<any | null>(null);
   const [formData, setFormData] = useState({
     name: '', type: '', kapten: '', tujuan: '', region: '', status: '', fuel: '100'
   });
 
-  React.useEffect(() => {
-    const fetchKapal = async () => {
-      // 1. Minta data ke supabase
-      const { data, error } = await supabase.from('kapal').select('*');
+  const fetchKapal = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('kapal')
+        .select('*')
+        .order('id', { ascending: false });
 
       if (data && !error) {
-        // 2. Format datanya (kasih warna)
         const formattedData = data.map(ship => {
-          let statusColor = 'text-[#3b82f6]'; // default biru
-          let statusBg = 'bg-[#3b82f6]/10';   // default biru
-          // ... (pengecekan status kapal)
+          let statusColor = 'text-gray-500';
+          let statusBg = 'bg-gray-500/10';
+          const s = (ship.status_kapal || '').toLowerCase();
           
-          return { ...ship, statusColor, statusBg };
-        });
-        
-        // 3. Masukkan data yang sudah rapi ke wadah React
-        setShipsData(formattedData);
-      }
-    };
+          if (s.includes('route')) { 
+            statusColor = 'text-[#3b82f6]'; 
+            statusBg = 'bg-[#3b82f6]/10'; 
+          } else if (s.includes('port')) { 
+            statusColor = 'text-[#10b981]'; 
+            statusBg = 'bg-[#10b981]/10'; 
+          } else if (s.includes('delay')) { 
+            statusColor = 'text-[#eab308]'; 
+            statusBg = 'bg-[#eab308]/10'; 
+          } else if (s.includes('maintenance')) { 
+            statusColor = 'text-[#f97316]'; 
+            statusBg = 'bg-[#f97316]/10'; 
+          } else { 
+            statusColor = 'text-[#b06aee]'; 
+            statusBg = 'bg-[#b06aee]/10'; 
+          }
 
-    fetchKapal(); // Jalankan pertama kali saat halaman dibuka
+          const rawFuel = ship.fuel_kapal;
+          const fuelText = rawFuel !== null && rawFuel !== undefined ? `${rawFuel}%` : '0%';
+
+          return {
+            id: ship.id,
+            name: ship.nama_kapal || '',
+            type: ship.tipe_kapal || '',
+            kapten: ship.nama_kapten || '',
+            tujuan: ship.tujuan_kapal || '',
+            region: ship.region_kapal || '',
+            status: ship.status_kapal || '',
+            fuel: fuelText,
+            statusColor,
+            statusBg
+          };
+        });
+        setShips(formattedData);
+      } else if (error) {
+        console.error("Error fetching kapal:", error);
+      }
+    } catch (e) {
+      console.error("Failed to fetch kapal:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchKapal();
   }, [supabase]);
 
-  React.useEffect(() => {
-    const saved = localStorage.getItem('anagata_ships');
-    if (saved) {
-      try {
-        setShips(JSON.parse(saved));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  React.useEffect(() => {
-    localStorage.setItem('anagata_ships', JSON.stringify(ships));
-  }, [ships]);
-
   const filteredShips = ships.filter(ship => 
-    ship.name.toLowerCase().includes(search.toLowerCase()) || 
-    ship.kapten.toLowerCase().includes(search.toLowerCase())
+    (ship.name || '').toLowerCase().includes(search.toLowerCase()) || 
+    (ship.kapten || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAddSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    let statusBg = 'bg-gray-500/10';
-    let statusColor = 'text-gray-500';
-    const s = formData.status.toLowerCase();
-    if (s.includes('route')) { statusColor = 'text-[#3b82f6]'; statusBg = 'bg-[#3b82f6]/10'; }
-    else if (s.includes('port')) { statusColor = 'text-[#10b981]'; statusBg = 'bg-[#10b981]/10'; }
-    else if (s.includes('delay')) { statusColor = 'text-[#eab308]'; statusBg = 'bg-[#eab308]/10'; }
-    else if (s.includes('maintenance')) { statusColor = 'text-[#f97316]'; statusBg = 'bg-[#f97316]/10'; }
-    else { statusColor = 'text-[#b06aee]'; statusBg = 'bg-[#b06aee]/10'; }
+  const openAddModal = () => {
+    setEditingShip(null);
+    setFormData({ name: '', type: '', kapten: '', tujuan: '', region: '', status: '', fuel: '100' });
+    setIsModalOpen(true);
+  };
 
-    const newShip = {
-      ...formData,
-      fuel: formData.fuel + '%',
-      statusColor,
-      statusBg
+  const openEditModal = (ship: any) => {
+    setEditingShip(ship);
+    const fuelVal = (ship.fuel || '').replace('%', '');
+    setFormData({
+      name: ship.name,
+      type: ship.type,
+      kapten: ship.kapten,
+      tujuan: ship.tujuan,
+      region: ship.region,
+      status: ship.status,
+      fuel: fuelVal
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    Swal.fire({
+      title: editingShip ? 'Memperbarui Kapal...' : 'Menambahkan Kapal...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    const payload = {
+      nama_kapal: formData.name,
+      tipe_kapal: formData.type,
+      nama_kapten: formData.kapten,
+      tujuan_kapal: formData.tujuan,
+      region_kapal: formData.region,
+      status_kapal: formData.status,
+      fuel_kapal: parseFloat(formData.fuel) || 0
     };
 
-    setShips([newShip, ...ships]);
-    setIsModalOpen(false);
-    setFormData({ name: '', type: '', kapten: '', tujuan: '', region: '', status: '', fuel: '100' });
-  };
+    if (editingShip) {
+      const { error } = await supabase
+        .from('kapal')
+        .update(payload)
+        .eq('id', editingShip.id);
 
-  const deleteShip = (idx: number) => {
-    const newShips = [...ships];
-    const realIdx = ships.findIndex(s => s === filteredShips[idx]);
-    if (realIdx !== -1) {
-      newShips.splice(realIdx, 1);
-      setShips(newShips);
+      if (!error) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: 'Data kapal berhasil diperbarui.',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        fetchKapal();
+        setIsModalOpen(false);
+        setEditingShip(null);
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal!',
+          text: 'Gagal memperbarui data: ' + error.message
+        });
+      }
+    } else {
+      const { error } = await supabase
+        .from('kapal')
+        .insert([payload]);
+
+      if (!error) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: 'Kapal baru berhasil ditambahkan.',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        fetchKapal();
+        setIsModalOpen(false);
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal!',
+          text: 'Gagal menambahkan kapal: ' + error.message
+        });
+      }
     }
   };
-  const totalKapal = shipsData.length;
-  const countEnRoute = shipsData.filter(s => s.status_kapal === 'En Route').length;
 
+  const deleteShip = async (ship: any) => {
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: `Hapus kapal ${ship.name}? Tindakan ini tidak dapat dibatalkan!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
+      Swal.fire({
+        title: 'Menghapus Kapal...',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const { error } = await supabase
+        .from('kapal')
+        .delete()
+        .eq('id', ship.id);
+
+      if (!error) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Dihapus!',
+          text: 'Data kapal berhasil dihapus.',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        fetchKapal();
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal!',
+          text: 'Gagal menghapus data: ' + error.message
+        });
+      }
+    }
+  };
 
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
@@ -132,7 +241,7 @@ export default function KelolaKapalPage() {
           <p className="text-gray-400 text-xs tracking-wider">Manajemen lengkap armada kapal</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={openAddModal}
           className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-4 py-2 rounded-md shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all font-bold text-xs tracking-wider flex items-center gap-2"
         >
           + Tambah Kapal
@@ -190,9 +299,13 @@ export default function KelolaKapalPage() {
               </div>
             </div>
           ))
+        ) : filteredShips.length === 0 ? (
+          <div className="col-span-full text-center py-10 text-gray-500 font-mono">
+            Tidak ada kapal ditemukan.
+          </div>
         ) : (
           filteredShips.map((ship, idx) => (
-            <div key={idx} className="bg-[#151922] border border-white/5 rounded-[10px] p-6 flex flex-col h-full">
+            <div key={ship.id || idx} className="bg-[#151922] border border-white/5 rounded-[10px] p-6 flex flex-col h-full">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 rounded bg-[#b06aee]/10 flex items-center justify-center border border-[#b06aee]/20 shrink-0">
                   <ShipIcon className="w-4 h-4 text-[#b06aee]" />
@@ -227,10 +340,10 @@ export default function KelolaKapalPage() {
                   {ship.status}
                 </div>
                 <div className="flex gap-2">
-                  <button className="p-1.5 text-gray-400 hover:text-[#b06aee] transition-colors rounded hover:bg-white/5">
+                  <button onClick={() => openEditModal(ship)} className="p-1.5 text-gray-400 hover:text-[#b06aee] transition-colors rounded hover:bg-white/5">
                     <PencilSquareIcon className="w-4 h-4" />
                   </button>
-                  <button onClick={() => deleteShip(idx)} className="p-1.5 text-gray-400 hover:text-rose-400 transition-colors rounded hover:bg-white/5">
+                  <button onClick={() => deleteShip(ship)} className="p-1.5 text-gray-400 hover:text-rose-400 transition-colors rounded hover:bg-white/5">
                     <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
@@ -244,7 +357,9 @@ export default function KelolaKapalPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#151922] border border-white/5 rounded-lg w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-white/5">
-              <h3 className="text-xl font-bold tracking-wider text-white">Tambah Kapal Baru</h3>
+              <h3 className="text-xl font-bold tracking-wider text-white">
+                {editingShip ? 'Edit Data Kapal' : 'Tambah Kapal Baru'}
+              </h3>
             </div>
             
             <form onSubmit={handleAddSubmit} className="p-6">
@@ -342,7 +457,7 @@ export default function KelolaKapalPage() {
                   type="submit"
                   className="px-6 py-2 rounded-md bg-[#a855f7] hover:bg-[#9333ea] text-white transition-colors font-bold text-sm tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.3)]"
                 >
-                  Tambah
+                  {editingShip ? 'Simpan' : 'Tambah'}
                 </button>
               </div>
             </form>
@@ -353,3 +468,4 @@ export default function KelolaKapalPage() {
     </main>
   );
 }
+
