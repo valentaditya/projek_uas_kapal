@@ -12,7 +12,8 @@ import {
   ArrowDownOnSquareIcon,
   PaperAirplaneIcon,
   TrashIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { createClient } from '@/utils/supabase/client';
 import Swal from 'sweetalert2';
@@ -31,6 +32,7 @@ const CARGO_TYPES = [
 export default function PengelolaanPengirimanPage() {
   const [activeTab, setActiveTab] = useState('kelola');
   const [filter, setFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -713,7 +715,15 @@ export default function PengelolaanPengirimanPage() {
   const inTransitCount = requests.filter(r => r.status === 'Dalam Perjalanan').length;
   const deliveredCount = requests.filter(r => r.status === 'Terkirim').length;
 
-  const filteredRequests = filter === 'ALL' ? requests : requests.filter(r => r.status === filter);
+  const filteredRequests = requests.filter(r => {
+    const matchesFilter = filter === 'ALL' || r.status === filter;
+    const matchesSearch = 
+      (r.id || '').toLowerCase().includes(search.toLowerCase()) ||
+      (r.customer || '').toLowerCase().includes(search.toLowerCase()) ||
+      (r.route || '').toLowerCase().includes(search.toLowerCase()) ||
+      (r.type || '').toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
@@ -1176,26 +1186,40 @@ export default function PengelolaanPengirimanPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            {[
-              { label: 'ALL', count: requests.length, value: 'ALL' },
-              { label: 'Menunggu Persetujuan', count: pendingCount, value: 'Menunggu Persetujuan' },
-              { label: 'Disetujui', count: approvedCount, value: 'Disetujui' },
-              { label: 'Dalam Perjalanan', count: inTransitCount, value: 'Dalam Perjalanan' },
-              { label: 'Terkirim', count: deliveredCount, value: 'Terkirim' },
-            ].map(f => (
-              <button 
-                key={f.value}
-                onClick={() => setFilter(f.value)}
-                className={`px-4 py-2 rounded-md text-[10px] tracking-wider font-bold transition-all ${
-                  filter === f.value 
-                    ? 'bg-[#b06aee] text-white shadow-[0_0_10px_rgba(176,106,238,0.4)]' 
-                    : 'bg-[#151a23] border border-white/5 text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                {f.label} ({f.count})
-              </button>
-            ))}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-wrap gap-3">
+              {[
+                { label: 'ALL', count: requests.length, value: 'ALL' },
+                { label: 'Menunggu Persetujuan', count: pendingCount, value: 'Menunggu Persetujuan' },
+                { label: 'Disetujui', count: approvedCount, value: 'Disetujui' },
+                { label: 'Dalam Perjalanan', count: inTransitCount, value: 'Dalam Perjalanan' },
+                { label: 'Terkirim', count: deliveredCount, value: 'Terkirim' },
+              ].map(f => (
+                /* ini button */
+                <button 
+                  key={f.value}
+                  onClick={() => setFilter(f.value)}
+                  className={`px-4 py-2 rounded-md text-[10px] tracking-wider font-bold transition-all ${
+                    filter === f.value 
+                      ? 'bg-[#b06aee] text-white shadow-[0_0_10px_rgba(176,106,238,0.4)]' 
+                      : 'bg-[#151a23] border border-white/5 text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
+
+            <div className="relative w-full md:w-80">
+              <MagnifyingGlassIcon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input 
+                type="text"
+                placeholder="Cari Resi, Customer, Rute, Kargo..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full bg-[#151922] border border-white/5 rounded-md pl-10 pr-4 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 transition-all placeholder:text-gray-600"
+              />
+            </div>
           </div>
 
           <div className="space-y-4">

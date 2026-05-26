@@ -25,6 +25,12 @@ export default function ProfilPage() {
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmNewPassword: ''
+  });
   const [formData, setFormData] = useState<any>({});
   const [stats, setStats] = useState({
     total: 0,
@@ -135,6 +141,104 @@ export default function ProfilPage() {
     });
   };
 
+  const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // validasi button login
+    if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: 'Konfirmasi password baru tidak cocok!'
+      });
+      return;
+    }
+
+    // validasi button login
+    if (passwordForm.newPassword.length < 6) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: 'Password baru minimal harus 6 karakter!'
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: 'Memproses ganti password...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    const supabase = createClient();
+
+    try {
+      // validasi button login
+      const { data: userData, error: fetchError } = await supabase
+        .from('user')
+        .select('password')
+        .eq('id', user.id)
+        .single();
+
+      if (fetchError || !userData) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal',
+          text: 'Gagal mengambil data user: ' + (fetchError?.message || 'User tidak ditemukan')
+        });
+        return;
+      }
+
+      // validasi button login
+      if (userData.password !== passwordForm.oldPassword) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal',
+          text: 'Password lama yang dimasukkan salah!'
+        });
+        return;
+      }
+
+      // validasi button login
+      const { error: updateError } = await supabase
+        .from('user')
+        .update({ password: passwordForm.newPassword })
+        .eq('id', user.id);
+
+      if (updateError) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal',
+          text: 'Gagal memperbarui password: ' + updateError.message
+        });
+        return;
+      }
+
+      // validasi button login
+      const updatedUser = { ...user, password: passwordForm.newPassword };
+      setUser(updatedUser);
+      document.cookie = `session_user=${encodeURIComponent(JSON.stringify(updatedUser))}; path=/; max-age=86400; SameSite=Lax`;
+      
+      setIsChangingPassword(false);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: 'Password berhasil diperbarui!',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (err: any) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: 'Terjadi kesalahan: ' + err.message
+      });
+    }
+  };
+
   return (
     <main className="max-w-[1200px] mx-auto px-6 py-8 relative z-10 w-full space-y-6 flex-1">
       
@@ -143,12 +247,25 @@ export default function ProfilPage() {
           <h2 className="text-2xl font-bold tracking-wider text-white mb-2">Profil Pengguna</h2>
           <p className="text-gray-400 text-xs tracking-wider">Kelola informasi akun Anda</p>
         </div>
-        <button 
-          onClick={handleEditClick}
-          className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-5 py-2.5 rounded-md shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all font-bold text-xs tracking-wider flex items-center gap-2 mt-4 md:mt-0"
-        >
-          <PencilSquareIcon className="w-4 h-4" /> Edit Profil
-        </button>
+        <div className="flex gap-3 mt-4 md:mt-0">
+          {/* ini button */}
+          <button 
+            onClick={() => {
+              setPasswordForm({ oldPassword: '', newPassword: '', confirmNewPassword: '' });
+              setIsChangingPassword(true);
+            }}
+            className="bg-transparent border border-[#b06aee] hover:bg-[#b06aee]/10 text-[#b06aee] px-5 py-2.5 rounded-md transition-all font-bold text-xs tracking-wider flex items-center gap-2"
+          >
+            Ganti Password
+          </button>
+          {/* ini button */}
+          <button 
+            onClick={handleEditClick}
+            className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-5 py-2.5 rounded-md shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all font-bold text-xs tracking-wider flex items-center gap-2"
+          >
+            <PencilSquareIcon className="w-4 h-4" /> Edit Profil
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -233,6 +350,7 @@ export default function ProfilPage() {
       {isEditing && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#151922] border border-white/10 rounded-lg w-full max-w-md p-6 relative">
+            {/* ini button */}
             <button 
               onClick={() => setIsEditing(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -302,8 +420,9 @@ export default function ProfilPage() {
                   required
                 />
               </div>
-
+ 
               <div className="flex justify-end gap-3 mt-6">
+                {/* ini button */}
                 <button 
                   type="button"
                   onClick={() => setIsEditing(false)}
@@ -311,11 +430,84 @@ export default function ProfilPage() {
                 >
                   Batal
                 </button>
+                {/* ini button */}
                 <button 
                   type="submit"
                   className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-4 py-2 rounded shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all text-xs font-bold tracking-wider"
                 >
                   Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isChangingPassword && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#151922] border border-white/10 rounded-lg w-full max-w-md p-6 relative">
+            {/* ini button */}
+            <button 
+              onClick={() => setIsChangingPassword(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-lg font-bold text-white mb-6 tracking-wider">Ganti Password</h3>
+            
+            <form onSubmit={handlePasswordChangeSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-mono">Password Lama</label>
+                <input 
+                  type="password" 
+                  value={passwordForm.oldPassword}
+                  onChange={e => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
+                  required
+                  placeholder="Masukkan password lama"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-mono">Password Baru</label>
+                <input 
+                  type="password" 
+                  value={passwordForm.newPassword}
+                  onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
+                  required
+                  placeholder="Masukkan password baru (min 6 karakter)"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-mono">Ulangi Password Baru</label>
+                <input 
+                  type="password" 
+                  value={passwordForm.confirmNewPassword}
+                  onChange={e => setPasswordForm({ ...passwordForm, confirmNewPassword: e.target.value })}
+                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
+                  required
+                  placeholder="Ulangi password baru"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                {/* ini button */}
+                <button 
+                  type="button"
+                  onClick={() => setIsChangingPassword(false)}
+                  className="px-4 py-2 rounded text-xs font-bold tracking-wider text-gray-400 hover:text-white transition-colors"
+                >
+                  Batal
+                </button>
+                {/* ini button */}
+                <button 
+                  type="submit"
+                  className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-4 py-2 rounded shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all text-xs font-bold tracking-wider"
+                >
+                  Ganti Password
                 </button>
               </div>
             </form>

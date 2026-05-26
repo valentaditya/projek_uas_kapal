@@ -19,7 +19,7 @@ export default function KelolaUserPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [formData, setFormData] = useState({
-    username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: ''
+    username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '', password: ''
   });
 
   const fetchUsers = async () => {
@@ -57,7 +57,8 @@ export default function KelolaUserPage() {
       role: user.role || '',
       status: user.status || '',
       company: user.perusahaan || '',
-      location: user.alamat || ''
+      location: user.alamat || '',
+      password: user.password || ''
     });
     setIsModalOpen(true);
   };
@@ -65,7 +66,8 @@ export default function KelolaUserPage() {
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const payload = {
+    // validasi button login
+    const payload: any = {
       username: formData.username,
       nama_lengkap: formData.name,
       email: formData.email,
@@ -77,21 +79,27 @@ export default function KelolaUserPage() {
     };
 
     if (editingUser) {
+      // validasi button login
+      if (formData.password) {
+        payload.password = formData.password;
+      }
       const { error } = await supabase.from('user').update(payload).eq('id', editingUser.id);
       if (!error) {
-        fetchUsers(); // Refresh data
+        fetchUsers();
         setIsModalOpen(false);
         setEditingUser(null);
-        setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '' });
+        setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '', password: '' });
       } else {
         alert("Gagal memperbarui user: " + error.message);
       }
     } else {
+      // validasi button login
+      payload.password = formData.password || formData.username;
       const { error } = await supabase.from('user').insert([payload]);
       if (!error) {
-        fetchUsers(); // Refresh data
+        fetchUsers();
         setIsModalOpen(false);
-        setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '' });
+        setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '', password: '' });
       } else {
         alert("Gagal menambahkan user: " + error.message);
       }
@@ -116,10 +124,11 @@ export default function KelolaUserPage() {
           <h2 className="text-2xl font-bold tracking-wider text-white mb-2">Kelola Pengguna</h2>
           <p className="text-gray-400 text-xs tracking-wider">Manajemen akun pengguna sistem</p>
         </div>
+        {/* ini button */}
         <button 
           onClick={() => {
             setEditingUser(null);
-            setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '' });
+            setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '', password: '' });
             setIsModalOpen(true);
           }}
           className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-4 py-2 rounded-md shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all font-bold text-xs tracking-wider flex items-center gap-2"
@@ -273,7 +282,28 @@ export default function KelolaUserPage() {
                   <input 
                     required 
                     type="text" 
-                    value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})}
+                    value={formData.username} 
+                    onChange={e => {
+                      const newUsername = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        username: newUsername,
+                        password: (!editingUser && (prev.password === prev.username || prev.password === '')) ? newUsername : prev.password
+                      }));
+                    }}
+                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 mb-2 font-mono font-sans">
+                    {editingUser ? 'Password (Kosongkan jika tidak diubah)' : 'Password (Default: username) *'}
+                  </label>
+                  <input 
+                    required={!editingUser}
+                    type="text" 
+                    value={formData.password} 
+                    onChange={e => setFormData({...formData, password: e.target.value})}
+                    placeholder={editingUser ? '••••••••' : 'Masukkan password'}
                     className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
                   />
                 </div>
@@ -363,6 +393,7 @@ export default function KelolaUserPage() {
               </div>
 
               <div className="flex justify-end gap-3 mt-8">
+                {/* ini button */}
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}
@@ -370,6 +401,7 @@ export default function KelolaUserPage() {
                 >
                   Batal
                 </button>
+                {/* ini button */}
                 <button 
                   type="submit"
                   className="px-6 py-2 rounded-md bg-[#a855f7] hover:bg-[#9333ea] text-white transition-colors font-bold text-sm tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.3)]"
