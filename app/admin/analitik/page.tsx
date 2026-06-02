@@ -12,6 +12,10 @@ import {
   FuelLevelChart, 
   KecepatanChart 
 } from './AnalitikCharts';
+import { createClient } from '@/utils/supabase/client';
+
+// cara connect db
+const supabase = createClient();
 
 const ShipIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -32,54 +36,35 @@ const AnchorIcon = ({ className }: { className?: string }) => (
 );
 
 export default function AnalitikPage() {
-  const initialShips = [
-    { name: 'ANAGATA PIONEER', type: 'Container', status: 'En Route', kapten: 'Kapten Budi Santoso', tujuan: 'Los Angeles', kecepatan: '17.888882420316165' },
-    { name: 'ANAGATA OCEAN', type: 'Bulk Carrier', status: 'In Port', kapten: 'Kapten Agus Wijaya', tujuan: 'Singapore', kecepatan: '0' },
-    { name: 'ANAGATA WAVE', type: 'Tanker', status: 'Delayed', kapten: 'Kapten Andi Pratama', tujuan: 'Sydney', kecepatan: '12.3' },
-    { name: 'ANAGATA VOYAGER', type: 'Container', status: 'En Route', kapten: 'Kapten Hendra Kusuma', tujuan: 'Rotterdam', kecepatan: '20.61672740950364' },
-    { name: 'ANAGATA HORIZON', type: 'Ro-Ro', status: 'Maintenance', kapten: 'Kapten Dedi Setiawan', tujuan: 'New York', kecepatan: '0' },
-    { name: 'ANAGATA NAVIGATOR', type: 'Container', status: 'En Route', kapten: 'Kapten Rudi Hartono', tujuan: 'Hong Kong', kecepatan: '21.19890074439647' },
-    { name: 'ANAGATA GUARDIAN', type: 'Bulk Carrier', status: 'En Route', kapten: 'Kapten Bambang Suryadi', tujuan: 'Santos', kecepatan: '16.35021022308469' },
-    { name: 'ANAGATA SENTINEL', type: 'Tanker', status: 'In Port', kapten: 'Kapten Arief Budiman', tujuan: 'Dubai', kecepatan: '0' },
-  ];
+  const [shipsData, setShipsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const availableStatuses = [
-    { status: 'En Route' },
-    { status: 'In Port' },
-    { status: 'Delayed' },
-    { status: 'Maintenance' },
-  ];
-
-  const [shipsData, setShipsData] = useState(initialShips);
+  const fetchShips = async () => {
+    try {
+      const { data, error } = await // cara ambil data di db
+ supabase.from('kapal').select('*');
+      if (data && !error) {
+        const mapped = data.map((ship: any) => ({
+          name: ship.nama_kapal,
+          type: ship.tipe_kapal,
+          status: ship.status_kapal || 'En Route',
+          kapten: ship.nama_kapten,
+          tujuan: ship.tujuan_kapal,
+          kecepatan: ship.status_kapal === 'En Route' ? (15 + Math.random() * 5).toFixed(1) : '0',
+          fuel: ship.fuel_kapal,
+          region: ship.region_kapal
+        }));
+        setShipsData(mapped);
+      }
+    } catch (err) {
+      console.error('Error fetching ships:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setShipsData(currentData => 
-        currentData.map(ship => {
-          if (Math.random() > 0.4) return ship;
-
-          const randomStatusObj = availableStatuses[Math.floor(Math.random() * availableStatuses.length)];
-          const newStatus = randomStatusObj.status;
-          
-          let newSpeed = ship.kecepatan;
-          if (newStatus === 'In Port' || newStatus === 'Maintenance') {
-             newSpeed = '0';
-          } else if (newStatus === 'Delayed') {
-             newSpeed = (Math.random() * 8 + 4).toFixed(1); 
-          } else if (newStatus === 'En Route') {
-             newSpeed = (Math.random() * 10 + 15).toFixed(14); 
-          }
-
-          return {
-            ...ship,
-            status: newStatus,
-            kecepatan: newSpeed
-          };
-        })
-      );
-    }, 5000);
-
-    return () => clearInterval(intervalId);
+    fetchShips();
   }, []);
 
   const totalKapal = shipsData.length;
@@ -99,7 +84,11 @@ export default function AnalitikPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between shadow-lg">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">TOTAL KAPAL</p>
-            <p className="text-4xl font-black text-[#b06aee]">{totalKapal}</p>
+            {loading ? (
+              <div className="h-9 w-14 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#b06aee]">{totalKapal}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#b06aee]/10 flex items-center justify-center border border-[#b06aee]/20">
             <ShipIcon className="w-6 h-6 text-[#b06aee]" />
@@ -109,7 +98,11 @@ export default function AnalitikPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between shadow-lg">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">EN ROUTE</p>
-            <p className="text-4xl font-black text-[#3b82f6]">{countEnRoute}</p>
+            {loading ? (
+              <div className="h-9 w-14 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#3b82f6]">{countEnRoute}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#3b82f6]/10 flex items-center justify-center border border-[#3b82f6]/20">
             <ArrowTrendingUpIcon className="w-6 h-6 text-[#3b82f6]" />
@@ -119,7 +112,11 @@ export default function AnalitikPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between shadow-lg">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">IN PORT</p>
-            <p className="text-4xl font-black text-[#06b6d4]">{countInPort}</p>
+            {loading ? (
+              <div className="h-9 w-14 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#06b6d4]">{countInPort}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#06b6d4]/10 flex items-center justify-center border border-[#06b6d4]/20">
             <AnchorIcon className="w-6 h-6 text-[#06b6d4]" />
@@ -129,7 +126,11 @@ export default function AnalitikPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between shadow-lg">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">DELAYED</p>
-            <p className="text-4xl font-black text-[#eab308]">{countDelayed}</p>
+            {loading ? (
+              <div className="h-9 w-14 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#eab308]">{countDelayed}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#eab308]/10 flex items-center justify-center border border-[#eab308]/20">
             <ClockIcon className="w-6 h-6 text-[#eab308]" />
@@ -139,7 +140,11 @@ export default function AnalitikPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between shadow-lg">
           <div>
             <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">MAINTENANCE</p>
-            <p className="text-4xl font-black text-[#f97316]">{countMaintenance}</p>
+            {loading ? (
+              <div className="h-9 w-14 bg-white/5 animate-pulse rounded mt-1" />
+            ) : (
+              <p className="text-4xl font-black text-[#f97316]">{countMaintenance}</p>
+            )}
           </div>
           <div className="w-12 h-12 rounded bg-[#f97316]/10 flex items-center justify-center border border-[#f97316]/20">
             <WrenchScrewdriverIcon className="w-6 h-6 text-[#f97316]" />
@@ -159,14 +164,14 @@ export default function AnalitikPage() {
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg h-[400px] flex flex-col">
           <h3 className="text-[11px] font-bold text-gray-300 tracking-wider mb-6">DISTRIBUSI REGIONAL</h3>
           <div className="flex-1 relative">
-            <RegionalDistribusiChart />
+            <RegionalDistribusiChart ships={shipsData} />
           </div>
         </div>
 
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-6 shadow-lg h-[400px] flex flex-col">
           <h3 className="text-[11px] font-bold text-gray-300 tracking-wider mb-6">LEVEL BAHAN BAKAR PER KAPAL</h3>
           <div className="flex-1 relative">
-            <FuelLevelChart />
+            <FuelLevelChart ships={shipsData} />
           </div>
         </div>
 

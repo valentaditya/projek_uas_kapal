@@ -33,11 +33,11 @@ export default function CekBiayaPage() {
 
   useEffect(() => {
     const fetchPorts = async () => {
+      // cara connect db
       const supabase = createClient();
       try {
-        const { data, error } = await supabase
-          .from('pelabuhan')
-          .select('id, nama_pelabuhan, kota')
+        const { data, error } = await // cara ambil data di db
+ supabase.from('pelabuhan').select('id, nama_pelabuhan, kota')
           .order('nama_pelabuhan', { ascending: true });
         if (data && !error) {
           setPorts(data);
@@ -92,7 +92,7 @@ export default function CekBiayaPage() {
 
     const selectedType = CARGO_TYPES.find(c => c.value === formData.jenis) || CARGO_TYPES[4];
     
-    // Cost Calculations
+
     const costWeight = beratVal * selectedType.rateKg;
     const costVolume = volumeVal * selectedType.rateM3;
     const totalCargoCost = costWeight + costVolume;
@@ -130,7 +130,7 @@ export default function CekBiayaPage() {
         </div>
         
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Form Panel */}
+          
           <form onSubmit={handleCalculate} className="bg-[#13161f] border border-white/5 rounded-lg p-8 space-y-5">
             <h4 className="font-bold text-[15px] text-white mb-6">Informasi Pengiriman</h4>
             
@@ -255,7 +255,7 @@ export default function CekBiayaPage() {
             </button>
           </form>
           
-          {/* Result Panel */}
+          
           <div className="bg-[#13161f] border border-white/5 rounded-lg p-8 flex flex-col justify-between min-h-[400px]">
             {!calculation ? (
               <div className="flex flex-col items-center justify-center text-center h-full my-auto">

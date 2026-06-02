@@ -12,6 +12,7 @@ import {
 import { createClient } from '@/utils/supabase/client';
 
 export default function KelolaUserPage() {
+  // cara connect db
   const supabase = createClient();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +25,8 @@ export default function KelolaUserPage() {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase.from('user').select('*').order('id', { ascending: false });
+      const { data, error } = await // cara ambil data user di db
+ supabase.from('user').select('*').order('id', { ascending: false });
       if (data && !error) {
         setUsers(data);
       } else if (error) {
@@ -66,7 +68,7 @@ export default function KelolaUserPage() {
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // validasi button login
+
     const payload: any = {
       username: formData.username,
       nama_lengkap: formData.name,
@@ -79,11 +81,12 @@ export default function KelolaUserPage() {
     };
 
     if (editingUser) {
-      // validasi button login
+
       if (formData.password) {
         payload.password = formData.password;
       }
-      const { error } = await supabase.from('user').update(payload).eq('id', editingUser.id);
+      const { error } = await // cara perbarui data di db
+ supabase.from('user').update(payload).eq('id', editingUser.id);
       if (!error) {
         fetchUsers();
         setIsModalOpen(false);
@@ -93,9 +96,10 @@ export default function KelolaUserPage() {
         alert("Gagal memperbarui user: " + error.message);
       }
     } else {
-      // validasi button login
+
       payload.password = formData.password || formData.username;
-      const { error } = await supabase.from('user').insert([payload]);
+      const { error } = await // cara memasukkan data ke db
+ supabase.from('user').insert([payload]);
       if (!error) {
         fetchUsers();
         setIsModalOpen(false);
@@ -108,7 +112,8 @@ export default function KelolaUserPage() {
 
   const deleteUser = async (id: number) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus user ini?')) {
-      const { error } = await supabase.from('user').delete().eq('id', id);
+      const { error } = await // cara hapus data di db
+ supabase.from('user').delete().eq('id', id);
       if (!error) {
         fetchUsers();
       } else {
@@ -124,7 +129,7 @@ export default function KelolaUserPage() {
           <h2 className="text-2xl font-bold tracking-wider text-white mb-2">Kelola Pengguna</h2>
           <p className="text-gray-400 text-xs tracking-wider">Manajemen akun pengguna sistem</p>
         </div>
-        {/* ini button */}
+        
         <button 
           onClick={() => {
             setEditingUser(null);
@@ -393,7 +398,7 @@ export default function KelolaUserPage() {
               </div>
 
               <div className="flex justify-end gap-3 mt-8">
-                {/* ini button */}
+                
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}
@@ -401,7 +406,7 @@ export default function KelolaUserPage() {
                 >
                   Batal
                 </button>
-                {/* ini button */}
+                
                 <button 
                   type="submit"
                   className="px-6 py-2 rounded-md bg-[#a855f7] hover:bg-[#9333ea] text-white transition-colors font-bold text-sm tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.3)]"

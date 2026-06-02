@@ -4,9 +4,10 @@ import React from 'react';
 import { 
   MapPinIcon,
   PaperAirplaneIcon,
-  PencilSquareIcon,
-  TrashIcon,
+  EyeIcon,
 } from '@heroicons/react/24/outline';
+import { createClient } from '@/utils/supabase/client';
+import Swal from 'sweetalert2';
 
 const RoutePathIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -18,46 +19,123 @@ const RoutePathIcon = ({ className }: { className?: string }) => (
 
 export default function ManajemenRutePage() {
   const [loading, setLoading] = React.useState(true);
-  
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
+  const [routes, setRoutes] = React.useState<any[]>([]);
+
+  const fetchRoutes = async () => {
+    try {
+      setLoading(true);
+      // cara connect db
+      const supabase = createClient();
+      const { data, error } = await // cara ambil data di db
+ supabase.from('pengiriman').select('*, detail_barang(*)');
+
+      if (error) throw error;
+
+      if (data) {
+
+        const shippedItems = data.filter((s: any) => s.status === 'Kirim' || s.status === 'Dalam Perjalanan');
+        
+
+        const chunks: any[][] = [];
+        for (let i = 0; i < shippedItems.length; i += 5) {
+          const chunk = shippedItems.slice(i, i + 5);
+          if (chunk.length === 5) {
+            chunks.push(chunk);
+          }
+        }
+
+
+        const vesselNames = [
+          'ANAGATA PIONEER',
+          'ANAGATA OCEAN',
+          'ANAGATA WAVE',
+          'ANAGATA VOYAGER',
+          'ANAGATA HORIZON',
+          'ANAGATA NAVIGATOR',
+          'ANAGATA GUARDIAN',
+          'ANAGATA SENTINEL'
+        ];
+
+
+        const mappedRoutes = chunks.map((chunk, idx) => {
+          const routeId = `R-${String(idx + 1).padStart(3, '0')}`;
+          const ship = vesselNames[idx % vesselNames.length];
+
+          const firstShipment = chunk[0];
+          const origin = firstShipment.pelabuhan_asal || 'Unknown Port';
+          const destination = firstShipment.pelabuhan_tujuan || 'Unknown Port';
+          
+          return {
+            ship,
+            routeId,
+            origin,
+            destination,
+            distance: '1,200 nm',
+            duration: '72 hrs',
+            waypoints: 3,
+            status: 'ACTIVE',
+            shipments: chunk
+          };
+        });
+
+        setRoutes(mappedRoutes);
+      }
+    } catch (err) {
+      console.error('Error fetching routes:', err);
+    } finally {
       setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchRoutes();
   }, []);
 
-  const routes = [
-    {
-      ship: 'ANAGATA PIONEER',
-      routeId: 'R001',
-      origin: 'Tokyo, Japan',
-      destination: 'Los Angeles, USA',
-      distance: '4800 nm',
-      duration: '240 hrs',
-      waypoints: 4,
-      status: 'ACTIVE',
-    },
-    {
-      ship: 'ANAGATA OCEAN',
-      routeId: 'R002',
-      origin: 'Jakarta, Indonesia',
-      destination: 'Singapore',
-      distance: '550 nm',
-      duration: '36 hrs',
-      waypoints: 2,
-      status: 'COMPLETED',
-    },
-    {
-      ship: 'ANAGATA WAVE',
-      routeId: 'R003',
-      origin: 'Brisbane, Australia',
-      destination: 'Sydney, Australia',
-      distance: '400 nm',
-      duration: '24 hrs',
-      waypoints: 1,
-      status: 'ACTIVE',
-    }
-  ];
+  const handleViewRoute = (route: any) => {
+    const popupHtml = `
+      <div style="text-align: left; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; color: #d1d5db; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+        <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin-bottom: 12px;">
+          <h4 style="font-weight: bold; color: #ffffff; margin: 0 0 8px 0; font-size: 14px;">Detail Kapal & Rute</h4>
+          <p style="margin: 3px 0;"><strong>Kapal:</strong> <span style="color: #c084fc;">${route.ship}</span></p>
+          <p style="margin: 3px 0;"><strong>Route ID:</strong> <span style="font-family: monospace;">${route.routeId}</span></p>
+          <p style="margin: 3px 0;"><strong>Rute Utama:</strong> ${route.origin} &rarr; ${route.destination}</p>
+          <p style="margin: 3px 0;"><strong>Jarak / Durasi:</strong> ${route.distance} / ${route.duration}</p>
+          <p style="margin: 3px 0;"><strong>Status Rute:</strong> <span style="color: #10b981;">${route.status}</span></p>
+        </div>
+        <div>
+          <h4 style="font-weight: bold; color: #ffffff; margin: 0 0 8px 0; font-size: 14px;">Daftar Pengiriman (5 Paket)</h4>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${route.shipments.map((shipment: any, idx: number) => {
+              const items = shipment.detail_barang || [];
+              const cargoSummary = items.map((it: any) => `${it.jenis_barang} (${it.berat_kg}kg)`).join(', ') || 'Kargo';
+              return `
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 6px;">
+                  <div style="display: flex; justify-content: space-between; font-weight: bold; color: #ffffff; margin-bottom: 4px; font-size: 12px;">
+                    <span style="font-family: monospace; color: #a855f7;">#${idx + 1} Resi: ${shipment.nomor_resi}</span>
+                    <span style="font-size: 10px; color: #9ca3af;">${shipment.tanggal_pengiriman ? shipment.tanggal_pengiriman.split('-').reverse().join('/') : '-'}</span>
+                  </div>
+                  <p style="margin: 2px 0;"><strong>Customer:</strong> ${shipment.nama_pengirim || '-'}</p>
+                  <p style="margin: 2px 0;"><strong>Penerima:</strong> ${shipment.nama_penerima || '-'}</p>
+                  <p style="margin: 2px 0;"><strong>Rute Paket:</strong> ${shipment.pelabuhan_asal} &rarr; ${shipment.pelabuhan_tujuan}</p>
+                  <p style="margin: 2px 0; font-size: 11px; color: #9ca3af;"><strong>Kargo:</strong> ${cargoSummary}</p>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+
+    Swal.fire({
+      title: 'Detail Rute Pengiriman',
+      html: popupHtml,
+      icon: 'info',
+      background: '#151922',
+      color: '#ffffff',
+      confirmButtonColor: '#a855f7',
+      confirmButtonText: 'Tutup'
+    });
+  };
 
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
@@ -66,9 +144,6 @@ export default function ManajemenRutePage() {
           <h2 className="text-2xl font-bold tracking-wider text-white mb-2">Manajemen Rute</h2>
           <p className="text-gray-400 text-xs tracking-wider">Kelola rute perjalanan kapal</p>
         </div>
-        <button className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-4 py-2 rounded-md shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all font-bold text-xs tracking-wider flex items-center gap-2">
-          + Tambah Rute
-        </button>
       </div>
 
       <div className="space-y-4 mb-20">
@@ -123,10 +198,13 @@ export default function ManajemenRutePage() {
 
               <div className="border-t border-white/5 px-6 py-4 flex justify-end gap-3 mt-auto">
                 <div className="w-16 h-8 bg-white/5 animate-pulse rounded" />
-                <div className="w-16 h-8 bg-white/5 animate-pulse rounded" />
               </div>
             </div>
           ))
+        ) : routes.length === 0 ? (
+          <div className="text-center py-20 border border-white/5 rounded-lg border-dashed">
+            <p className="text-gray-500 text-sm font-mono">Belum ada rute aktif. Rute akan terbentuk otomatis untuk setiap 5 pengiriman berstatus Kirim.</p>
+          </div>
         ) : (
           routes.map((route, idx) => (
             <div key={idx} className="bg-[#151922] border border-white/5 rounded-[10px] flex flex-col hover:border-white/10 transition-colors">
@@ -143,9 +221,7 @@ export default function ManajemenRutePage() {
                     </div>
                   </div>
                   
-                  <div className={`px-2.5 py-1.5 rounded text-[10px] font-bold tracking-wider uppercase ${
-                    route.status === 'ACTIVE' ? 'bg-[#3b82f6]/10 text-[#3b82f6]' : 'bg-[#10b981]/10 text-[#10b981]'
-                  }`}>
+                  <div className={`px-2.5 py-1.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#3b82f6]/10 text-[#3b82f6]`}>
                     {route.status}
                   </div>
                 </div>
@@ -185,11 +261,11 @@ export default function ManajemenRutePage() {
               </div>
 
               <div className="border-t border-white/5 px-6 py-4 flex justify-end gap-3 mt-auto">
-                <button className="flex items-center gap-1.5 px-4 py-2 bg-[#1c1825] border border-[#b06aee]/30 text-[#b06aee] hover:bg-[#b06aee]/20 text-[11px] font-bold rounded transition-colors tracking-wide">
-                  <PencilSquareIcon className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button className="flex items-center gap-1.5 px-4 py-2 bg-[#251515] border border-rose-500/30 text-rose-500 hover:bg-rose-500/20 text-[11px] font-bold rounded transition-colors tracking-wide">
-                  <TrashIcon className="w-3.5 h-3.5" /> Hapus
+                <button 
+                  onClick={() => handleViewRoute(route)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#1c1825] border border-[#b06aee]/30 text-[#b06aee] hover:bg-[#b06aee]/20 text-[11px] font-bold rounded transition-colors tracking-wide"
+                >
+                  <EyeIcon className="w-3.5 h-3.5" /> View
                 </button>
               </div>
             </div>

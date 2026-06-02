@@ -48,16 +48,28 @@ export function StatusDistribusiChart({ ships }: { ships: any[] }) {
   );
 }
 
-export function RegionalDistribusiChart() {
+export function RegionalDistribusiChart({ ships }: { ships: any[] }) {
+  const regionCounts = ships.reduce((acc, ship) => {
+    let r = ship.region || 'Other';
+    if (r === 'Southeast Asia') r = 'SE Asia';
+    if (r === 'North America') r = 'N. America';
+    if (r === 'East Asia') r = 'E. Asia';
+    if (r === 'South America') r = 'S. America';
+    if (r === 'Middle East') r = 'Mid East';
+    acc[r] = (acc[r] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   const data = [
-    { name: 'Pacific', value: 0.8 },
-    { name: 'SE Asia', value: 0.95 },
-    { name: 'Oceania', value: 0.4 },
-    { name: 'Europe', value: 0.7 },
-    { name: 'N. America', value: 0.6 },
-    { name: 'E. Asia', value: 0.85 },
-    { name: 'S. America', value: 0.3 },
-    { name: 'Mid East', value: 0.5 },
+    { name: 'Pacific', value: regionCounts['Pacific'] || 0 },
+    { name: 'SE Asia', value: regionCounts['SE Asia'] || 0 },
+    { name: 'Oceania', value: regionCounts['Oceania'] || 0 },
+    { name: 'Europe', value: regionCounts['Europe'] || 0 },
+    { name: 'N. America', value: regionCounts['N. America'] || 0 },
+    { name: 'E. Asia', value: regionCounts['E. Asia'] || 0 },
+    { name: 'S. America', value: regionCounts['S. America'] || 0 },
+    { name: 'Mid East', value: regionCounts['Mid East'] || 0 },
+    { name: 'Indonesia', value: regionCounts['Indonesia'] || 0 },
   ];
 
   return (
@@ -82,7 +94,7 @@ export function RegionalDistribusiChart() {
             cursor={{ fill: '#ffffff05' }}
             contentStyle={{ backgroundColor: '#151922', borderColor: '#ffffff10', color: '#fff', borderRadius: '8px' }}
             itemStyle={{ color: '#3b82f6' }}
-            formatter={(val: any) => [val, 'Konsentrasi']}
+            formatter={(val: any) => [val, 'Jumlah Kapal']}
           />
           <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
         </BarChart>
@@ -91,13 +103,15 @@ export function RegionalDistribusiChart() {
   );
 }
 
-export function FuelLevelChart() {
-  const data = [
-    { name: 'V001', fuel: 0.85 },
-    { name: 'V002', fuel: 0.45 },
-    { name: 'V006', fuel: 0.90 },
-    { name: 'V007', fuel: 0.60 },
-  ];
+export function FuelLevelChart({ ships }: { ships: any[] }) {
+  const data = ships.map(s => {
+    const nameParts = s.name.split(' ');
+    const shortName = nameParts.length > 1 ? nameParts[1] : nameParts[0];
+    return {
+      name: shortName,
+      fuel: (Number(s.fuel) || 0) / 100
+    };
+  });
 
   return (
     <div className="w-full h-full min-h-[250px]">

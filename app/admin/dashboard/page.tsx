@@ -31,14 +31,14 @@ const AnchorIcon = ({ className }: { className?: string }) => (
 export default function DashboardPage() {
   const [shipsData, setShipsData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // cara connect db
   const supabase = createClient();
 
   useEffect(() => {
     const fetchKapal = async () => {
       try {
-        const { data, error } = await supabase
-          .from('kapal')
-          .select('*');
+        const { data, error } = await // cara ambil data di db
+ supabase.from('kapal').select('*');
 
         if (data && !error) {
           const formattedData = data.map(ship => {
@@ -84,7 +84,7 @@ export default function DashboardPage() {
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
       <div className="mb-8">
         <h2 className="text-2xl font-bold tracking-wider text-white mb-2">Ringkasan Armada</h2>
-        {/* <p className="text-gray-400 text-xs tracking-wider">Pemantauan real-time - update setiap 5 detik</p> */}
+        
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">

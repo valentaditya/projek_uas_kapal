@@ -47,17 +47,17 @@ export default function ProfilPage() {
     };
 
     const fetchUserStats = async (userId: number) => {
+      // cara connect db
       const supabase = createClient();
       try {
-        const { data, error } = await supabase
-          .from('detail_pengiriman')
-          .select('id_pengiriman, pengiriman(status)')
+        const { data, error } = await // cara ambil data di db
+ supabase.from('detail_pengiriman').select('id_pengiriman, pengiriman(status)')
           .eq('id_user', userId);
 
         if (data && !error) {
           const total = data.length;
           const proses = data.filter((d: any) => 
-            d.pengiriman && (d.pengiriman.status === 'Menunggu Persetujuan' || d.pengiriman.status === 'Disetujui' || d.pengiriman.status === 'Dalam Perjalanan')
+            d.pengiriman && (d.pengiriman.status === 'Menunggu Persetujuan' || d.pengiriman.status === 'Disetujui' || d.pengiriman.status === 'Dalam Perjalanan' || d.pengiriman.status === 'Kirim')
           ).length;
           const selesai = data.filter((d: any) => d.pengiriman && d.pengiriman.status === 'Terkirim').length;
 
@@ -98,11 +98,11 @@ export default function ProfilPage() {
       }
     });
 
+    // cara connect db
     const supabase = createClient();
     
-    const { error } = await supabase
-      .from('user')
-      .update({
+    const { error } = await // cara perbarui data di db
+ supabase.from('user').update({
         nama_lengkap: formData.nama_lengkap,
         email: formData.email,
         no_telepon: formData.no_telepon,
@@ -144,7 +144,7 @@ export default function ProfilPage() {
   const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // validasi button login
+
     if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
       Swal.fire({
         icon: 'error',
@@ -154,7 +154,7 @@ export default function ProfilPage() {
       return;
     }
 
-    // validasi button login
+
     if (passwordForm.newPassword.length < 6) {
       Swal.fire({
         icon: 'error',
@@ -172,13 +172,13 @@ export default function ProfilPage() {
       }
     });
 
+    // cara connect db
     const supabase = createClient();
 
     try {
-      // validasi button login
-      const { data: userData, error: fetchError } = await supabase
-        .from('user')
-        .select('password')
+
+      const { data: userData, error: fetchError } = await // cara ambil data user di db
+ supabase.from('user').select('password')
         .eq('id', user.id)
         .single();
 
@@ -191,7 +191,7 @@ export default function ProfilPage() {
         return;
       }
 
-      // validasi button login
+
       if (userData.password !== passwordForm.oldPassword) {
         Swal.fire({
           icon: 'error',
@@ -201,10 +201,9 @@ export default function ProfilPage() {
         return;
       }
 
-      // validasi button login
-      const { error: updateError } = await supabase
-        .from('user')
-        .update({ password: passwordForm.newPassword })
+
+      const { error: updateError } = await // cara perbarui data di db
+ supabase.from('user').update({ password: passwordForm.newPassword })
         .eq('id', user.id);
 
       if (updateError) {
@@ -216,7 +215,7 @@ export default function ProfilPage() {
         return;
       }
 
-      // validasi button login
+
       const updatedUser = { ...user, password: passwordForm.newPassword };
       setUser(updatedUser);
       document.cookie = `session_user=${encodeURIComponent(JSON.stringify(updatedUser))}; path=/; max-age=86400; SameSite=Lax`;
@@ -248,7 +247,7 @@ export default function ProfilPage() {
           <p className="text-gray-400 text-xs tracking-wider">Kelola informasi akun Anda</p>
         </div>
         <div className="flex gap-3 mt-4 md:mt-0">
-          {/* ini button */}
+          
           <button 
             onClick={() => {
               setPasswordForm({ oldPassword: '', newPassword: '', confirmNewPassword: '' });
@@ -258,7 +257,7 @@ export default function ProfilPage() {
           >
             Ganti Password
           </button>
-          {/* ini button */}
+          
           <button 
             onClick={handleEditClick}
             className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-5 py-2.5 rounded-md shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all font-bold text-xs tracking-wider flex items-center gap-2"
@@ -350,7 +349,7 @@ export default function ProfilPage() {
       {isEditing && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#151922] border border-white/10 rounded-lg w-full max-w-md p-6 relative">
-            {/* ini button */}
+            
             <button 
               onClick={() => setIsEditing(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -422,7 +421,7 @@ export default function ProfilPage() {
               </div>
  
               <div className="flex justify-end gap-3 mt-6">
-                {/* ini button */}
+                
                 <button 
                   type="button"
                   onClick={() => setIsEditing(false)}
@@ -430,7 +429,7 @@ export default function ProfilPage() {
                 >
                   Batal
                 </button>
-                {/* ini button */}
+                
                 <button 
                   type="submit"
                   className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-4 py-2 rounded shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all text-xs font-bold tracking-wider"
@@ -446,7 +445,7 @@ export default function ProfilPage() {
       {isChangingPassword && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#151922] border border-white/10 rounded-lg w-full max-w-md p-6 relative">
-            {/* ini button */}
+            
             <button 
               onClick={() => setIsChangingPassword(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -494,7 +493,7 @@ export default function ProfilPage() {
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
-                {/* ini button */}
+                
                 <button 
                   type="button"
                   onClick={() => setIsChangingPassword(false)}
@@ -502,7 +501,7 @@ export default function ProfilPage() {
                 >
                   Batal
                 </button>
-                {/* ini button */}
+                
                 <button 
                   type="submit"
                   className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-4 py-2 rounded shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all text-xs font-bold tracking-wider"

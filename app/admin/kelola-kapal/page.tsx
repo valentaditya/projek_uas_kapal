@@ -9,6 +9,7 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import Swal from 'sweetalert2';
 
+// cara connect db
 const supabase = createClient();
 
 const ShipIcon = ({ className }: { className?: string }) => (
@@ -33,9 +34,8 @@ export default function KelolaKapalPage() {
 
   const fetchKapal = async () => {
     try {
-      const { data, error } = await supabase
-        .from('kapal')
-        .select('*')
+      const { data, error } = await // cara ambil data di db
+ supabase.from('kapal').select('*')
         .order('id', { ascending: false });
 
       if (data && !error) {
@@ -140,9 +140,8 @@ export default function KelolaKapalPage() {
     };
 
     if (editingShip) {
-      const { error } = await supabase
-        .from('kapal')
-        .update(payload)
+      const { error } = await // cara perbarui data di db
+ supabase.from('kapal').update(payload)
         .eq('id', editingShip.id);
 
       if (!error) {
@@ -164,9 +163,8 @@ export default function KelolaKapalPage() {
         });
       }
     } else {
-      const { error } = await supabase
-        .from('kapal')
-        .insert([payload]);
+      const { error } = await // cara memasukkan data ke db
+ supabase.from('kapal').insert([payload]);
 
       if (!error) {
         Swal.fire({
@@ -209,9 +207,8 @@ export default function KelolaKapalPage() {
         }
       });
 
-      const { error } = await supabase
-        .from('kapal')
-        .delete()
+      const { error } = await // cara hapus data di db
+ supabase.from('kapal').delete()
         .eq('id', ship.id);
 
       if (!error) {

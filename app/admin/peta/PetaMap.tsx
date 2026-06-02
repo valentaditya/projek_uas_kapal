@@ -1,41 +1,29 @@
 "use client";
 
 import React from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 interface PetaMapProps {
-  ships: any[];
-  onShipClick: (shipId: string) => void;
+  routes: any[];
+  onRouteClick: (routeName: string) => void;
 }
 
-export default function PetaMap({ ships, onShipClick }: PetaMapProps) {
-  const shipCoordinates: Record<string, [number, number]> = {
-    'Los Angeles': [34.0522, -118.2437],
-    'Singapore': [1.2902, 103.8519],
-    'Sydney': [-33.8688, 151.2093],
-    'Rotterdam': [51.9225, 4.47917],
-    'New York': [40.7128, -74.0060],
-    'Hong Kong': [22.3193, 114.1694],
-    'Santos': [-23.9618, -46.3322],
-    'Dubai': [25.2048, 55.2708]
-  };
+const getMidpoint = (c1: [number, number], c2: [number, number]): [number, number] => {
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'En Route': return '#3b82f6';
-      case 'In Port': return '#06b6d4';
-      case 'Delayed': return '#eab308';
-      case 'Maintenance': return '#f43f5e';
-      default: return '#8884d8';
-    }
-  };
+  const t = 0.6;
+  return [
+    c1[0] + (c2[0] - c1[0]) * t,
+    c1[1] + (c2[1] - c1[1]) * t
+  ];
+};
 
+export default function PetaMap({ routes, onRouteClick }: PetaMapProps) {
   return (
     <div className="absolute inset-0 w-full h-full z-0">
       <MapContainer 
-        center={[20, 0]} 
-        zoom={2} 
+        center={[-2.5489, 118.0149]}
+        zoom={5} 
         style={{ height: '100%', width: '100%', background: '#0a0d14' }}
         attributionControl={false}
       >
@@ -43,32 +31,89 @@ export default function PetaMap({ ships, onShipClick }: PetaMapProps) {
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        {ships.map((ship, idx) => {
-          const position = shipCoordinates[ship.tujuan] || [0, 0];
-          const color = getStatusColor(ship.status);
+
+        {routes.map((route, idx) => {
+          const origin = route.originCoords || [0, 0];
+          const dest = route.destCoords || [0, 0];
+          const shipPos = getMidpoint(origin, dest);
+
           return (
-            <CircleMarker 
-              key={idx} 
-              center={position} 
-              pathOptions={{
-                color: color,
-                fillColor: color,
-                fillOpacity: 0.8,
-                weight: 2
-              }}
-              radius={8}
-              eventHandlers={{
-                click: () => onShipClick(ship.name),
-              }}
-            >
-              <Popup className="bg-[#151922] border-white/10 text-white">
-                <div className="font-sans">
-                  <h3 className="font-bold text-gray-800 text-sm mb-1">{ship.name}</h3>
-                  <p className="text-xs text-gray-600 mb-1">Status: <span className="font-semibold">{ship.status}</span></p>
-                  <p className="text-xs text-gray-600">Kecepatan: {Number(ship.kecepatan).toFixed(2)} kn</p>
-                </div>
-              </Popup>
-            </CircleMarker>
+            <React.Fragment key={route.routeId || idx}>
+              
+              <Polyline 
+                positions={[origin, dest]}
+                pathOptions={{
+                  color: '#a855f7',
+                  dashArray: '8, 8',
+                  weight: 2,
+                  opacity: 0.85
+                }}
+              />
+
+              
+              <CircleMarker 
+                center={origin}
+                pathOptions={{
+                  color: '#10b981',
+                  fillColor: '#10b981',
+                  fillOpacity: 0.8,
+                  weight: 1.5
+                }}
+                radius={5}
+              >
+                <Popup>
+                  <div className="font-sans text-[11px]">
+                    <strong className="text-emerald-600">Pelabuhan Asal</strong>
+                    <p className="font-semibold text-gray-800 mt-0.5">{route.origin}</p>
+                  </div>
+                </Popup>
+              </CircleMarker>
+
+              
+              <CircleMarker 
+                center={dest}
+                pathOptions={{
+                  color: '#ef4444',
+                  fillColor: '#ef4444',
+                  fillOpacity: 0.8,
+                  weight: 1.5
+                }}
+                radius={5}
+              >
+                <Popup>
+                  <div className="font-sans text-[11px]">
+                    <strong className="text-rose-600">Pelabuhan Tujuan</strong>
+                    <p className="font-semibold text-gray-800 mt-0.5">{route.destination}</p>
+                  </div>
+                </Popup>
+              </CircleMarker>
+
+              
+              <CircleMarker 
+                center={shipPos}
+                pathOptions={{
+                  color: '#3b82f6',
+                  fillColor: '#3b82f6',
+                  fillOpacity: 0.9,
+                  weight: 2
+                }}
+                radius={8}
+                eventHandlers={{
+                  click: () => onRouteClick(route.name),
+                }}
+              >
+                <Popup>
+                  <div className="font-sans text-xs">
+                    <h3 className="font-bold text-gray-900">{route.name}</h3>
+                    <p className="text-[10px] text-purple-600 font-semibold font-mono mt-0.5">Route ID: {route.routeId}</p>
+                    <div className="border-t border-gray-100 my-1 pt-1 space-y-0.5">
+                      <p className="text-[10px] text-gray-600">Kecepatan: <strong>{route.kecepatan} kn</strong></p>
+                      <p className="text-[10px] text-gray-600">Rute: {route.origin.split(',')[0]} &rarr; {route.destination.split(',')[0]}</p>
+                    </div>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            </React.Fragment>
           );
         })}
       </MapContainer>

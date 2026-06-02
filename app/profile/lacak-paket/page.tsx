@@ -42,12 +42,12 @@ export default function LacakPaketPage() {
     setLoading(true);
     setShipment(null);
     setHasSearched(true);
+    // cara connect db
     const supabase = createClient();
 
     try {
-      const { data, error } = await supabase
-        .from('pengiriman')
-        .select('*, detail_barang(*, asuransi_barang(*))')
+      const { data, error } = await // cara ambil data di db
+ supabase.from('pengiriman').select('*, detail_barang(*, asuransi_barang(*))')
         .eq('nomor_resi', resiInput.trim())
         .maybeSingle();
 
@@ -76,9 +76,9 @@ export default function LacakPaketPage() {
 
   const getStatusStepIndex = (status: string) => {
     if (status === 'Disetujui') return 1;
-    if (status === 'Dalam Perjalanan') return 2;
+    if (status === 'Dalam Perjalanan' || status === 'Kirim') return 2;
     if (status === 'Terkirim') return 3;
-    return 0; // Menunggu Persetujuan
+    return 0;
   };
 
   const steps = [
@@ -137,7 +137,7 @@ export default function LacakPaketPage() {
           </div>
         ) : (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Status Timeline */}
+            
             <div className="bg-[#13161f] border border-white/5 rounded-lg p-8">
               <h4 className="font-bold text-sm text-white mb-8">Status Pengiriman ({shipment.nomor_resi})</h4>
               
@@ -170,7 +170,7 @@ export default function LacakPaketPage() {
               </div>
             </div>
 
-            {/* Shipment details */}
+            
             <div className="bg-[#13161f] border border-white/5 rounded-lg p-8 grid md:grid-cols-2 gap-8">
               <div>
                 <h4 className="font-bold text-sm text-white mb-4 pb-2 border-b border-white/5">Informasi Rute & Pengiriman</h4>

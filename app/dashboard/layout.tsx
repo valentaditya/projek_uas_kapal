@@ -52,7 +52,7 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
   }, [router]);
 
   const handleLogout = async () => {
-    // Clear session cookie
+
     document.cookie = "session_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     router.push('/login');
   };
@@ -121,7 +121,7 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
             </button>
           </div>
 
-          {/* Mobile Hamburguer Menu Button */}
+          
           <div className="flex lg:hidden items-center">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
@@ -134,19 +134,19 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
         </div>
       </nav>
 
-      {/* Mobile Drawer Overlay */}
+      
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          {/* Backdrop */}
+          
           <div 
             className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
           
-          {/* Drawer Content */}
+          
           <div className="relative ml-auto w-full max-w-xs h-full bg-[#12111d] border-l border-purple-500/20 p-6 flex flex-col justify-between shadow-2xl z-10 animate-slide-in">
             <div>
-              {/* Header */}
+              
               <div className="flex items-center justify-between pb-6 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 relative flex items-center justify-center">
@@ -168,7 +168,7 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
                 </button>
               </div>
 
-              {/* Profile Account Info */}
+              
               <div className="py-4 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-[#b06aee] font-bold text-xs uppercase">
@@ -181,7 +181,7 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
                 </div>
               </div>
 
-              {/* Navigation Menu */}
+              
               <div className="py-4 space-y-2 max-h-[55vh] overflow-y-auto custom-scrollbar">
                 {navLinks.map((link) => {
                   const Icon = link.icon;
@@ -206,7 +206,7 @@ export default function UserDashboardLayout({ children }: { children: React.Reac
               </div>
             </div>
 
-            {/* Logout Button */}
+            
             <div className="pt-4 border-t border-white/10">
               <button 
                 onClick={() => {

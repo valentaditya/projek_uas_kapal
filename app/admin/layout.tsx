@@ -95,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [router]);
 
   const handleLogout = async () => {
-    // Clear session cookie
+
     document.cookie = "session_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     router.push('/login');
   };
@@ -172,7 +172,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       {item.name}
                       <ChevronDownIcon className="w-3 h-3 ml-1 group-hover:rotate-180 transition-transform duration-200" />
                     </div>
-                    {/* Mega Menu Dropdown */}
+                    
                     <div className="absolute top-full left-0 mt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50">
                       <div className="bg-[#171b26] border border-white/5 rounded-lg shadow-2xl p-2 overflow-hidden">
                         {item.items.map((subItem) => {
@@ -282,7 +282,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
           </div>
 
-          {/* Mobile Hamburguer Menu Button */}
+          
           <div className="flex lg:hidden items-center">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
@@ -295,19 +295,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </nav>
 
-      {/* Mobile Drawer Overlay */}
+      
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          {/* Backdrop */}
+          
           <div 
             className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
           
-          {/* Drawer Content */}
+          
           <div className="relative ml-auto w-full max-w-xs h-full bg-[#12111d] border-l border-purple-500/20 p-6 flex flex-col justify-between shadow-2xl z-10 animate-slide-in">
             <div>
-              {/* Header */}
+              
               <div className="flex items-center justify-between pb-6 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 relative flex items-center justify-center">
@@ -329,7 +329,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </button>
               </div>
 
-              {/* Profile Account Info */}
+              
               <div className="py-4 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-[#b06aee] font-bold text-xs uppercase">
@@ -345,7 +345,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
               </div>
 
-              {/* Navigation Menu */}
+              
               <div className="py-4 space-y-4 max-h-[45vh] overflow-y-auto custom-scrollbar">
                 {navItems.map((item) => {
                   if (item.isMega && item.items) {
@@ -402,7 +402,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   );
                 })}
 
-                {/* Notifications Accordion/Preview */}
+                
                 <div className="pt-2 border-t border-white/5">
                   <div className="text-[9px] text-gray-500 uppercase tracking-widest px-2 font-bold mb-2 flex justify-between items-center">
                     <span>Notifikasi</span>
@@ -428,7 +428,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
 
-            {/* Logout Button */}
+            
             <div className="pt-4 border-t border-white/10">
               <button 
                 onClick={() => {

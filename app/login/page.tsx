@@ -8,8 +8,6 @@ import Swal from 'sweetalert2';
 import { UserIcon, LockClosedIcon, EnvelopeIcon, PhoneIcon, EyeIcon, EyeSlashIcon, ArrowLeftIcon} from '@heroicons/react/24/outline';
 import { createClient } from '../../utils/supabase/client';
 
-
-
 export default function LoginPage() {
   const router = useRouter();
 
@@ -35,10 +33,10 @@ export default function LoginPage() {
           router.replace('/dashboard');
         }
       } catch (e) {
-        // ignore invalid json
       }
     }
   }, [router]);
+
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,12 +52,13 @@ export default function LoginPage() {
       }
     });
 
+
+    // cara connect db
     const supabase = createClient();
     
-    // Query custom user table by email or username
-    const { data: userData, error } = await supabase
-      .from('user')
-      .select('*')
+
+    const { data: userData, error } = await // cara ambil data user di db
+ supabase.from('user').select('*')
       .or(`email.eq."${email}",username.eq."${email}"`)
       .maybeSingle();
 
@@ -102,7 +101,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Set local cookie for session storage
     document.cookie = `session_user=${encodeURIComponent(JSON.stringify(userData))}; path=/; max-age=86400; SameSite=Lax`;
 
     Swal.mixin({
@@ -127,6 +125,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
   };
+
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -155,12 +154,13 @@ export default function LoginPage() {
       }
     });
 
+
+    // cara connect db
     const supabase = createClient();
 
-    // Check if username or email already exists in custom DB
-    const { data: existingUser, error: checkError } = await supabase
-      .from('user')
-      .select('id')
+
+    const { data: existingUser, error: checkError } = await // cara ambil data user di db
+ supabase.from('user').select('id')
       .or(`email.eq."${email}",username.eq."${username}"`);
 
     if (checkError) {
@@ -183,13 +183,12 @@ export default function LoginPage() {
       return;
     }
 
-    // Insert new user into database
-    const { error: insertError } = await supabase
-      .from('user')
-      .insert([
+
+    const { error: insertError } = await // cara memasukkan data ke db
+ supabase.from('user').insert([
         {
           username: username,
-          nama_lengkap: username, // defaults to username
+          nama_lengkap: username,
           email: email,
           no_telepon: phone,
           password: password,
@@ -238,15 +237,6 @@ export default function LoginPage() {
         <div className="p-10 flex flex-col items-center">
           
           <div className="mb-6 relative">
-            {/* <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#8a2be2] to-[#0088ff] flex items-center justify-center shadow-[0_0_25px_0_rgba(100,50,250,0.5)] relative z-10 p-1 overflow-hidden">
-              <Image 
-                src="/profile/icon.png" 
-                alt="Logo Kapal" 
-                width={40} 
-                height={40} 
-                className="object-contain drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" 
-              />
-            </div> */}
             <Image 
                 src="/profile/icon.png" 
                 alt="Logo Kapal" 
@@ -283,18 +273,9 @@ export default function LoginPage() {
               Buat Akun
             </button>
           </div>
-
-          {/* <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-2 h-2 rounded-full bg-[#00ff66] shadow-[0_0_8px_rgba(0,255,102,0.8)] relative">
-              <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75"></div>
-            </div>
-            <span className="text-[10px] font-mono font-bold text-green-400 tracking-wider">SYSTEM ONLINE</span>
-          </div> */}
-          
           
           <form key={activeTab} className="w-full" onSubmit={activeTab === 'login' ? handleLogin : handleRegister}>
             {activeTab === 'login' ? (
-             
               <>
                 <div className="mb-5">
                   <label className="block text-[10px] font-mono font-bold text-gray-300 tracking-widest mb-2" htmlFor="email">
@@ -354,7 +335,6 @@ export default function LoginPage() {
                 </button>
               </>
             ) : (
-              //  Buat Akun
               <>
                 <div className="mb-5">
                   
@@ -471,7 +451,6 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                
                 <button 
                   type="submit" 
                   className="w-full font-mono font-bold text-sm text-white tracking-widest py-4 rounded-md transition-all duration-300 relative overflow-hidden group shadow-[0_5px_20px_rgba(100,50,250,0.3)] hover:shadow-[0_8px_25px_rgba(100,50,250,0.5)] transform hover:-translate-y-0.5"
@@ -486,10 +465,6 @@ export default function LoginPage() {
           
         </div>
       </div>
-      
-      {/* <div className="absolute bottom-8 text-center w-full z-10">
-        <p className="text-[10px] font-mono text-gray-600 tracking-widest">©2026 SIWEB KELOMPOK 11</p>
-      </div> */}
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
     </div>

@@ -13,6 +13,7 @@ import {
 import { createClient } from '@/utils/supabase/client';
 import Swal from 'sweetalert2';
 
+// cara connect db
 const supabase = createClient();
 
 const CARGO_TYPES = [
@@ -28,7 +29,7 @@ export default function KirimPaketPage() {
   const [ports, setPorts] = useState<any[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   
-  // Shipment Info State
+
   const [formData, setFormData] = useState({
     nama: '', email: '', telepon: '', alamatPengirim: '',
     namaPenerima: '', emailPenerima: '', teleponPenerima: '', alamatPenerima: '',
@@ -49,9 +50,8 @@ export default function KirimPaketPage() {
   useEffect(() => {
     const fetchPorts = async () => {
       try {
-        const { data, error } = await supabase
-          .from('pelabuhan')
-          .select('id, nama_pelabuhan, kota')
+        const { data, error } = await // cara ambil data di db
+ supabase.from('pelabuhan').select('id, nama_pelabuhan, kota')
           .order('nama_pelabuhan', { ascending: true });
         if (data && !error) {
           setPorts(data);
@@ -89,7 +89,7 @@ export default function KirimPaketPage() {
     }
   }, []);
 
-  // Handle adding or updating an item in the cart
+
   const handleAddItem = (e: React.MouseEvent) => {
     e.preventDefault();
 
@@ -115,7 +115,7 @@ export default function KirimPaketPage() {
     const beratVal = parseFloat(itemForm.berat) || 0;
     const volumeVal = parseFloat(itemForm.volume) || 0;
 
-    // Calculate cargo cost
+
     const cargoCost = (beratVal * cargoTypeObj.rateKg) + (volumeVal * cargoTypeObj.rateM3);
 
     if (editingItemId) {
@@ -153,7 +153,7 @@ export default function KirimPaketPage() {
       setCart([...cart, newItem]);
     }
     
-    // Reset item form except "jenis" dropdown
+
     setItemForm({
       jenis: itemForm.jenis,
       berat: '',
@@ -163,7 +163,7 @@ export default function KirimPaketPage() {
     });
   };
 
-  // Set item to edit mode
+
   const handleEditItemClick = (item: any) => {
     setEditingItemId(item.id);
     setItemForm({
@@ -175,19 +175,19 @@ export default function KirimPaketPage() {
     });
   };
 
-  // Remove an item from the cart
+
   const handleRemoveItem = (id: string) => {
     setCart(cart.filter(item => item.id !== id));
   };
 
-  // Calculations for entire cart
+
   const totalWeight = cart.reduce((sum, item) => sum + item.berat, 0);
   const totalVolume = cart.reduce((sum, item) => sum + item.volume, 0);
   const totalCargoCost = cart.reduce((sum, item) => sum + item.cargoCost, 0);
   const totalInsuranceCost = useInsurance ? Math.max(10000, Math.round(totalCargoCost * 0.005)) : 0;
   const subtotal = totalCargoCost + totalInsuranceCost;
 
-  // Handle entire shipment form submission
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -209,13 +209,13 @@ export default function KirimPaketPage() {
       return;
     }
 
-    // Resolve port names/cities from selected IDs
+
     const portAsalObj = ports.find(p => String(p.id) === formData.asal);
     const portTujuanObj = ports.find(p => String(p.id) === formData.tujuan);
     const portAsalText = portAsalObj ? `${portAsalObj.nama_pelabuhan}, ${portAsalObj.kota}` : formData.asal;
     const portTujuanText = portTujuanObj ? `${portTujuanObj.nama_pelabuhan}, ${portTujuanObj.kota}` : formData.tujuan;
 
-    // Build the detail HTML table for the SweetAlert2 popup
+
     const popupHtml = `
       <div style="text-align: left; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; color: #d1d5db; max-height: 380px; overflow-y: auto; padding-right: 5px;">
         <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin-bottom: 12px;">
@@ -290,17 +290,16 @@ export default function KirimPaketPage() {
     });
 
     try {
-      // 1. Generate Custom Resi Number: AO-[YEAR]-[ITEM_COUNT][PORT_ID][INSURANCE_INDICATOR]
+
       const shippingYear = formData.tanggal ? new Date(formData.tanggal).getFullYear() : new Date().getFullYear();
       const itemCount = cart.length;
       const originPortId = formData.asal;
       const insuranceIndicator = useInsurance ? '1' : '0';
       const resi = `AO-${shippingYear}-${itemCount}${originPortId}${insuranceIndicator}`;
 
-      // 2. Insert shipment record
-      const { data: shipment, error: errShipment } = await supabase
-        .from('pengiriman')
-        .insert([{
+
+      const { data: shipment, error: errShipment } = await // cara memasukkan data ke db
+ supabase.from('pengiriman').insert([{
           nomor_resi: resi,
           nama_pengirim: formData.nama,
           email_pengirim: formData.email,
@@ -321,11 +320,10 @@ export default function KirimPaketPage() {
         throw new Error("Gagal menyimpan pengiriman: " + errShipment?.message);
       }
 
-      // 3. Insert detail_pengiriman record
+
       const userId = currentUser?.id || 1; 
-      const { error: errDetail } = await supabase
-        .from('detail_pengiriman')
-        .insert([{
+      const { error: errDetail } = await // cara memasukkan data ke db
+ supabase.from('detail_pengiriman').insert([{
           id_user: userId,
           id_pengiriman: shipment.id,
           subtotal: subtotal
@@ -335,14 +333,13 @@ export default function KirimPaketPage() {
         throw new Error("Gagal menyimpan rincian pengiriman: " + errDetail.message);
       }
 
-      // 4. Insert items into detail_barang and link first item to asuransi_barang if insurance checked
+
       let firstInsertedBarangId = null;
 
       for (let i = 0; i < cart.length; i++) {
         const item = cart[i];
-        const { data: insertedBarang, error: errBarang } = await supabase
-          .from('detail_barang')
-          .insert([{
+        const { data: insertedBarang, error: errBarang } = await // cara memasukkan data ke db
+ supabase.from('detail_barang').insert([{
             pengiriman_id: shipment.id,
             jenis_barang: item.jenis,
             deskripsi_barang: item.deskripsi,
@@ -362,16 +359,15 @@ export default function KirimPaketPage() {
         }
       }
 
-      // Save insurance details linked to the first item if shipment-level insurance checked
+
       if (useInsurance && firstInsertedBarangId) {
         const polisNum = 'POL-' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 100);
-        const { error: errIns } = await supabase
-          .from('asuransi_barang')
-          .insert([{
+        const { error: errIns } = await // cara memasukkan data ke db
+ supabase.from('asuransi_barang').insert([{
             barang_id: firstInsertedBarangId,
             nomor_polis: polisNum,
             provider_asuransi: 'Anagata Proteksi Utama',
-            nilai_pertanggungan: totalCargoCost * 10, // estimated cargo value
+            nilai_pertanggungan: totalCargoCost * 10,
             premi_asuransi: totalInsuranceCost,
             status_asuransi: 'Aktif'
           }]);
@@ -381,7 +377,7 @@ export default function KirimPaketPage() {
         }
       }
 
-      // Success
+
       await Swal.fire({
         icon: 'success',
         title: 'Pengiriman Berhasil Dibuat!',
@@ -389,7 +385,7 @@ export default function KirimPaketPage() {
         confirmButtonColor: '#a855f7'
       });
 
-      // Clear cart and reset recipient/route details (keep sender info)
+
       setCart([]);
       setUseInsurance(false);
       setFormData(prev => ({
@@ -418,7 +414,7 @@ export default function KirimPaketPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* Informasi Pengirim */}
+        
         <div className="bg-[#151922] border border-white/5 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-6 text-gray-200 font-bold bg-white/5 inline-flex px-3 py-1.5 rounded text-xs tracking-wider border border-white/5">
             <UserCircleIcon className="w-4 h-4 text-[#b06aee]" /> Informasi Pengirim
@@ -467,7 +463,7 @@ export default function KirimPaketPage() {
           </div>
         </div>
 
-        {/* Informasi Penerima */}
+        
         <div className="bg-[#151922] border border-white/5 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-6 text-gray-200 font-bold bg-white/5 inline-flex px-3 py-1.5 rounded text-xs tracking-wider border border-white/5">
             <ArrowDownOnSquareIcon className="w-4 h-4 text-[#3b82f6]" /> Informasi Penerima
@@ -514,7 +510,7 @@ export default function KirimPaketPage() {
           </div>
         </div>
 
-        {/* Detail Pengiriman */}
+        
         <div className="bg-[#151922] border border-white/5 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-6 text-gray-200 font-bold bg-white/5 inline-flex px-3 py-1.5 rounded text-xs tracking-wider border border-white/5">
             <MapPinIcon className="w-4 h-4 text-[#10b981]" /> Detail Pengiriman
@@ -572,7 +568,7 @@ export default function KirimPaketPage() {
           </div>
         </div>
 
-        {/* Input Sub-form Kargo */}
+        
         <div className="bg-[#151922] border border-white/5 rounded-lg p-6">
           <div className="flex items-center gap-2 mb-6 text-gray-200 font-bold bg-white/5 inline-flex px-3 py-1.5 rounded text-xs tracking-wider border border-white/5">
             <CubeIcon className="w-4 h-4 text-[#10b981]" /> Input Kargo / Barang
@@ -668,7 +664,7 @@ export default function KirimPaketPage() {
           </div>
         </div>
 
-        {/* Tabel Keranjang Barang */}
+        
         <div className="bg-[#151922] border border-white/5 rounded-lg p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-2 text-gray-200 font-bold bg-white/5 inline-flex px-3 py-1.5 rounded text-xs tracking-wider border border-white/5">
@@ -737,7 +733,7 @@ export default function KirimPaketPage() {
             </table>
           </div>
 
-          {/* Shipment-level Insurance Checkbox */}
+          
           {cart.length > 0 && (
             <div className="mt-4 p-4 bg-[#1b202c] border border-white/5 rounded-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -775,7 +771,7 @@ export default function KirimPaketPage() {
           )}
         </div>
 
-        {/* Action Buttons */}
+        
         <div className="flex justify-end gap-3 mt-8 pb-10">
           <button 
             type="button" 

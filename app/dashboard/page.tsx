@@ -27,39 +27,39 @@ export default function UserDashboard() {
   });
 
   const getStatusColor = (status: string) => {
-    if (status === 'Dalam Perjalanan') return 'text-[#06b6d4]';
+    if (status === 'Dalam Perjalanan' || status === 'Kirim') return 'text-[#06b6d4]';
     if (status === 'Disetujui') return 'text-[#3b82f6]';
     if (status === 'Terkirim') return 'text-[#10b981]';
-    return 'text-[#eab308]'; // Menunggu Persetujuan
+    return 'text-[#eab308]';
   };
 
   const getStatusBg = (status: string) => {
-    if (status === 'Dalam Perjalanan') return 'bg-[#06b6d4]/10';
+    if (status === 'Dalam Perjalanan' || status === 'Kirim') return 'bg-[#06b6d4]/10';
     if (status === 'Disetujui') return 'bg-[#3b82f6]/10';
     if (status === 'Terkirim') return 'bg-[#10b981]/10';
-    return 'bg-[#eab308]/10'; // Menunggu Persetujuan
+    return 'bg-[#eab308]/10';
   };
 
   const getBorderColor = (status: string) => {
-    if (status === 'Dalam Perjalanan') return 'border-[#06b6d4]/30';
+    if (status === 'Dalam Perjalanan' || status === 'Kirim') return 'border-[#06b6d4]/30';
     if (status === 'Disetujui') return 'border-[#3b82f6]/30';
     if (status === 'Terkirim') return 'border-[#10b981]/30';
-    return 'border-[#eab308]/30'; // Menunggu Persetujuan
+    return 'border-[#eab308]/30';
   };
 
   const getProgressText = (status: string) => {
-    if (status === 'Dalam Perjalanan') return 'Dalam perjalanan ke pelabuhan tujuan';
+    if (status === 'Dalam Perjalanan' || status === 'Kirim') return 'Dalam perjalanan ke pelabuhan tujuan';
     if (status === 'Disetujui') return 'Pengiriman disetujui, menunggu jadwal kapal';
     if (status === 'Terkirim') return 'Barang telah diterima di tujuan';
     return 'Menunggu verifikasi admin';
   };
 
   const fetchUserShipments = async (userId: number) => {
+    // cara connect db
     const supabase = createClient();
     try {
-      const { data, error } = await supabase
-        .from('detail_pengiriman')
-        .select(`
+      const { data, error } = await // cara ambil data di db
+ supabase.from('detail_pengiriman').select(`
           subtotal,
           pengiriman:id_pengiriman (
             id,
@@ -89,7 +89,7 @@ export default function UserDashboard() {
         .eq('id_user', userId);
 
       if (data && !error) {
-        // Map to format
+
         const list = data
           .map((dp: any) => {
             const p = dp.pengiriman;
@@ -109,6 +109,7 @@ export default function UserDashboard() {
               progress: getProgressText(p.status),
               type: itemTypes,
               pengirim: p.nama_pengirim || '-',
+              penerima: p.nama_penerima || '-',
               asal: p.pelabuhan_asal || '-',
               tujuan: p.pelabuhan_tujuan || '-',
               tanggal: p.tanggal_pengiriman ? p.tanggal_pengiriman.split('-').reverse().join('/') : '-',
@@ -124,9 +125,9 @@ export default function UserDashboard() {
 
         setShipments(list);
 
-        // Compute Stats
+
         const total = list.length;
-        const transit = list.filter((s: any) => s.status === 'Dalam Perjalanan').length;
+        const transit = list.filter((s: any) => s.status === 'Dalam Perjalanan' || s.status === 'Kirim').length;
         const tunggu = list.filter((s: any) => s.status === 'Menunggu Persetujuan').length;
         const selesai = list.filter((s: any) => s.status === 'Terkirim').length;
 
@@ -278,9 +279,15 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              <div className="bg-[#0e1017]/50 rounded p-4 border border-white/5 mb-4">
-                 <p className="text-[10px] text-gray-500 mb-1">Pengirim</p>
-                 <p className="text-xs text-gray-300 font-semibold">{item.pengirim}</p>
+              <div className="bg-[#0e1017]/50 rounded p-4 border border-white/5 mb-4 grid grid-cols-2 gap-4">
+                 <div>
+                    <p className="text-[10px] text-gray-500 mb-1">Pengirim</p>
+                    <p className="text-xs text-gray-300 font-semibold">{item.pengirim}</p>
+                 </div>
+                 <div>
+                    <p className="text-[10px] text-gray-500 mb-1">Penerima</p>
+                    <p className="text-xs text-gray-300 font-semibold">{item.penerima}</p>
+                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5 border-b border-white/5 pb-5">
