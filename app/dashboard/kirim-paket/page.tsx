@@ -320,6 +320,14 @@ export default function KirimPaketPage() {
         throw new Error("Gagal menyimpan pengiriman: " + errShipment?.message);
       }
 
+      // Insert notification for admin panel
+      await supabase.from('notifikasi').insert([{
+        title: 'Request Pengiriman Baru',
+        message: `Request pengiriman ${resi} dari ${formData.nama} menunggu persetujuan.`,
+        icon: 'CubeIcon',
+        icon_color: 'text-cyan-500'
+      }]);
+
 
       const userId = currentUser?.id || 1; 
       const { error: errDetail } = await // cara memasukkan data ke db

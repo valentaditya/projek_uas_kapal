@@ -19,6 +19,7 @@ import {
   ChevronDownIcon,
   Bars3Icon,
   XMarkIcon,
+  PaperAirplaneIcon,
 } from '@heroicons/react/24/outline';
 
 const ShipIcon = ({ className }: { className?: string }) => (
@@ -55,6 +56,37 @@ const RoutePathIcon = ({ className }: { className?: string }) => (
     <path d="M15.5 5H8a3 3 0 0 0-3 3v0a3 3 0 0 0 3 3h8a3 3 0 0 1 3 3v0a3 3 0 0 1-3 3H8.5" />
   </svg>
 );
+
+const iconMap: Record<string, React.ComponentType<any>> = {
+  Square3Stack3DIcon,
+  MapIcon, 
+  ChartBarIcon, 
+  UsersIcon, 
+  WrenchScrewdriverIcon, 
+  ArrowRightOnRectangleIcon,
+  BellIcon,
+  CubeIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
+  PaperAirplaneIcon,
+  ShipIcon,
+  AnchorIcon
+};
+
+const getRelativeTime = (dateStr: string) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return 'Baru saja';
+  if (diffMins < 60) return `${diffMins} menit yang lalu`;
+  if (diffHours < 24) return `${diffHours} jam yang lalu`;
+  return `${diffDays} hari yang lalu`;
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -124,13 +156,87 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Kelola User', href: '/admin/kelola-user', icon: UsersIcon },
   ];
 
-  const notifications = [
-    { id: 1, title: 'Pengiriman Selesai', message: 'Pengiriman AO-2026-001 telah sampai tujuan', time: '1 menit yang lalu', icon: CubeIcon, iconColor: 'text-cyan-500', isUnread: true },
-    { id: 2, title: 'Kapal ANAGATA-01 Tiba', message: 'ANAGATA-01 telah tiba di pelabuhan Jakarta', time: '6 menit yang lalu', icon: ShipIcon, iconColor: 'text-[#b06aee]', isUnread: true },
-    { id: 3, title: 'Request Pengiriman Baru', message: 'Request pengiriman SR003 menunggu persetujuan', time: '16 menit yang lalu', icon: CubeIcon, iconColor: 'text-cyan-500', isUnread: true },
-    { id: 4, title: 'Pengiriman Disetujui', message: 'Request SR002 telah disetujui dan dialokasikan ke ANAGATA-03', time: '1 jam yang lalu', icon: CheckIcon, iconColor: 'text-green-500', isUnread: false },
-    { id: 5, title: 'Bahan Bakar Rendah', message: 'Kapal ANAGATA HORIZON bahan bakar tersisa 35%', time: '2 jam yang lalu', icon: ExclamationTriangleIcon, iconColor: 'text-yellow-500', isUnread: true },
-  ];
+  // Notifications state & operations
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  const fetchNotifications = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('notifikasi')
+        .select('*')
+        .order('id', { ascending: false });
+      if (data && !error) {
+        setNotifications(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch notifications:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+
+    // Setup Supabase Realtime Subscription
+    const supabase = createClient();
+    const channel = supabase
+      .channel('notifikasi-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifikasi' },
+        () => {
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleDeleteNotification = async (id: number) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('notifikasi').delete().eq('id', id);
+      if (!error) {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+      }
+    } catch (e) {
+      console.error("Failed to delete notification:", e);
+    }
+  };
+
+  const handleClearAllNotifications = async () => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('notifikasi').delete().neq('id', 0);
+      if (!error) {
+        setNotifications([]);
+      }
+    } catch (e) {
+      console.error("Failed to clear notifications:", e);
+    }
+  };
+
+  const handleOpenNotifications = async () => {
+    setShowNotifications(!showNotifications);
+    const unreadNotifications = notifications.filter(n => n.is_unread);
+    if (!showNotifications && unreadNotifications.length > 0) {
+      try {
+        const supabase = createClient();
+        await supabase
+          .from('notifikasi')
+          .update({ is_unread: false })
+          .eq('is_unread', true);
+        setNotifications(prev => prev.map(n => ({ ...n, is_unread: false })));
+      } catch (e) {
+        console.error("Failed to mark notifications as read:", e);
+      }
+    }
+  };
+
+  const unreadCount = notifications.filter(n => n.is_unread).length;
 
   if (isLoading) {
     return (
@@ -227,15 +333,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             
             <div className="h-8 w-[1px] bg-white/10"></div>
             
-            <div className="relative">
+             <div className="relative">
               <div 
                 className="cursor-pointer text-gray-400 hover:text-white transition-colors p-1"
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={handleOpenNotifications}
               >
                 <BellIcon className="w-5 h-5" />
-                <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm border border-[#12141f]">
-                  4
-                </div>
+                {unreadCount > 0 && (
+                  <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm border border-[#12141f]">
+                    {unreadCount}
+                  </div>
+                )}
               </div>
 
               {showNotifications && (
@@ -243,31 +351,53 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <div className="p-4 border-b border-white/5 flex justify-between items-start bg-[#1a1e2a]">
                     <div>
                       <h3 className="text-white font-bold text-sm tracking-wider">Notifikasi</h3>
-                      <p className="text-[10px] text-gray-500 mt-0.5 font-mono">4 belum dibaca</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5 font-mono">{unreadCount} belum dibaca</p>
                     </div>
-                    <button className="text-[10px] text-[#b06aee] hover:text-white transition-colors tracking-wide">
+                    <button 
+                      onClick={handleClearAllNotifications}
+                      className="text-[10px] text-[#b06aee] hover:text-white transition-colors tracking-wide"
+                    >
                       Hapus Semua
                     </button>
                   </div>
                   <div className="max-h-[350px] overflow-y-auto custom-scrollbar flex flex-col">
-                    {notifications.map((notif) => {
-                      const Icon = notif.icon;
-                      return (
-                        <div key={notif.id} className="p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3 relative cursor-pointer">
-                          <div className={`mt-0.5 shrink-0 ${notif.iconColor}`}>
-                            <Icon className="w-4 h-4" />
+                    {notifications.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500 text-xs font-mono">
+                        Tidak ada notifikasi.
+                      </div>
+                    ) : (
+                      notifications.map((notif) => {
+                        const IconComponent = iconMap[notif.icon] || CubeIcon;
+                        return (
+                          <div key={notif.id} className="p-4 border-b border-white/5 hover:bg-white/[0.02] transition-colors flex gap-3 relative group/notif">
+                            <div className={`mt-0.5 shrink-0 ${notif.icon_color || 'text-gray-400'}`}>
+                              <IconComponent className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-[11px] font-bold text-gray-200 mb-1">{notif.title}</h4>
+                              <p className="text-[10px] text-gray-400 leading-relaxed mb-1 pr-4">{notif.message}</p>
+                              <span className="text-[9px] text-gray-600 font-mono">{getRelativeTime(notif.created_at)}</span>
+                            </div>
+                            
+                            {/* Individual Delete Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteNotification(notif.id);
+                              }}
+                              className="absolute right-3 top-3 p-1 text-gray-500 hover:text-rose-400 rounded hover:bg-rose-500/10 opacity-0 group-hover/notif:opacity-100 transition-opacity"
+                              title="Hapus"
+                            >
+                              <XMarkIcon className="w-3 h-3" />
+                            </button>
+
+                            {notif.is_unread && (
+                              <div className="absolute right-3 bottom-3 w-1.5 h-1.5 rounded-full bg-[#b06aee] shadow-[0_0_5px_rgba(176,106,238,0.5)] group-hover/notif:hidden"></div>
+                            )}
                           </div>
-                          <div>
-                            <h4 className="text-[11px] font-bold text-gray-200 mb-1">{notif.title}</h4>
-                            <p className="text-[10px] text-gray-400 leading-relaxed mb-2 pr-4">{notif.message}</p>
-                            <span className="text-[9px] text-gray-600 font-mono">{notif.time}</span>
-                          </div>
-                          {notif.isUnread && (
-                            <div className="absolute right-4 top-5 w-1.5 h-1.5 rounded-full bg-[#b06aee] shadow-[0_0_5px_rgba(176,106,238,0.5)]"></div>
-                          )}
-                        </div>
-                      )
-                    })}
+                        )
+                      })
+                    )}
                   </div>
                 </div>
               )}
@@ -403,26 +533,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 })}
 
                 
-                <div className="pt-2 border-t border-white/5">
+                 <div className="pt-2 border-t border-white/5">
                   <div className="text-[9px] text-gray-500 uppercase tracking-widest px-2 font-bold mb-2 flex justify-between items-center">
                     <span>Notifikasi</span>
-                    <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold">4</span>
+                    <span className="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold">{unreadCount}</span>
                   </div>
                   <div className="max-h-36 overflow-y-auto space-y-1.5 px-2 custom-scrollbar">
-                    {notifications.slice(0, 3).map((notif) => {
-                      const Icon = notif.icon;
-                      return (
-                        <div key={notif.id} className="p-2 bg-white/[0.02] border border-white/5 rounded text-[10px] flex gap-2">
-                          <div className={`shrink-0 mt-0.5 ${notif.iconColor}`}>
-                            <Icon className="w-3.5 h-3.5" />
+                    {notifications.length === 0 ? (
+                      <div className="p-4 text-center text-gray-600 text-[10px] font-mono">
+                        Tidak ada notifikasi.
+                      </div>
+                    ) : (
+                      notifications.slice(0, 3).map((notif) => {
+                        const IconComponent = iconMap[notif.icon] || CubeIcon;
+                        return (
+                          <div key={notif.id} className="p-2 bg-white/[0.02] border border-white/5 rounded text-[10px] flex gap-2 relative group/notif">
+                            <div className={`shrink-0 mt-0.5 ${notif.icon_color || 'text-gray-400'}`}>
+                              <IconComponent className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-gray-300 truncate">{notif.title}</div>
+                              <div className="text-gray-500 mt-0.5 leading-tight text-[9px] line-clamp-2">{notif.message}</div>
+                            </div>
+                            
+                            {/* Individual Delete for mobile */}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteNotification(notif.id);
+                              }}
+                              className="p-0.5 text-gray-500 hover:text-rose-400 rounded opacity-0 group-hover/notif:opacity-100 transition-opacity self-start"
+                            >
+                              <XMarkIcon className="w-3 h-3" />
+                            </button>
                           </div>
-                          <div>
-                            <div className="font-bold text-gray-300">{notif.title}</div>
-                            <div className="text-gray-500 mt-0.5 leading-tight text-[9px]">{notif.message}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </div>

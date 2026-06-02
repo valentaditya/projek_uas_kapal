@@ -324,6 +324,14 @@ export default function PengelolaanPengirimanPage() {
 
       if (error) throw error;
 
+      // Insert notification
+      await supabase.from('notifikasi').insert([{
+        title: 'Pengiriman Disetujui',
+        message: `Request pengiriman ${req.id} telah disetujui.`,
+        icon: 'CheckIcon',
+        icon_color: 'text-green-500'
+      }]);
+
       await Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
@@ -403,6 +411,14 @@ export default function PengelolaanPengirimanPage() {
         .eq('id', dbId);
       if (errShipmentDelete) throw errShipmentDelete;
 
+      // Insert notification
+      await supabase.from('notifikasi').insert([{
+        title: 'Pengiriman Ditolak',
+        message: `Request pengiriman ${req.id} telah ditolak & dihapus.`,
+        icon: 'ExclamationTriangleIcon',
+        icon_color: 'text-rose-500'
+      }]);
+
       await Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
@@ -451,6 +467,14 @@ export default function PengelolaanPengirimanPage() {
         .eq('id', req.dbId);
 
       if (error) throw error;
+
+      // Insert notification
+      await supabase.from('notifikasi').insert([{
+        title: 'Pengiriman Dikirim',
+        message: `Pengiriman dengan Resi ${req.id} telah dikirim.`,
+        icon: 'PaperAirplaneIcon',
+        icon_color: 'text-cyan-500'
+      }]);
 
       await Swal.fire({
         icon: 'success',
@@ -722,6 +746,13 @@ export default function PengelolaanPengirimanPage() {
         throw new Error("Gagal menyimpan pengiriman: " + errShipment?.message);
       }
 
+      // Insert notification
+      await supabase.from('notifikasi').insert([{
+        title: 'Request Pengiriman Baru',
+        message: `Request pengiriman ${resi} dari ${formData.nama} menunggu persetujuan.`,
+        icon: 'CubeIcon',
+        icon_color: 'text-cyan-500'
+      }]);
 
       const userId = selectedCustomerId !== 'manual' ? parseInt(selectedCustomerId) : 1;
       const { error: errDetail } = await // cara memasukkan data ke db

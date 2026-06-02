@@ -10,6 +10,7 @@ import {
   UserIcon,
 } from '@heroicons/react/24/outline';
 import { createClient } from '@/utils/supabase/client';
+import { generatePagination } from '@/app/lib/utils';
 
 export default function KelolaUserPage() {
   // cara connect db
@@ -22,6 +23,10 @@ export default function KelolaUserPage() {
   const [formData, setFormData] = useState({
     username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '', password: ''
   });
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchUsers = async () => {
     try {
@@ -48,6 +53,24 @@ export default function KelolaUserPage() {
     (user.email || '').toLowerCase().includes(search.toLowerCase()) ||
     (user.username || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  // Reset page when search term changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Adjust page index if data length shrinks
+  React.useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [filteredUsers.length, itemsPerPage, totalPages, currentPage]);
 
   const openEditModal = (user: any) => {
     setEditingUser(user);
@@ -212,7 +235,7 @@ export default function KelolaUserPage() {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                paginatedUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
@@ -269,6 +292,75 @@ export default function KelolaUserPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {!loading && filteredUsers.length > 0 && (
+          <div className="px-6 py-4 border-t border-white/5 bg-[#11141b]/50 flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-400 font-mono">
+            <div className="flex flex-wrap items-center gap-4 text-[10px]">
+              <span>
+                Menampilkan <span className="text-[#b06aee] font-bold">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredUsers.length)}</span> - <span className="text-[#b06aee] font-bold">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> dari <span className="text-white font-bold">{filteredUsers.length}</span> user
+              </span>
+              <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+                <span>Tampilkan:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-[#151922] border border-white/10 rounded px-2 py-0.5 text-[10px] text-gray-200 focus:outline-none focus:border-[#b06aee]/50 cursor-pointer"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-2 py-1 rounded bg-[#1b202c] border border-white/5 text-gray-300 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-[#1b202c] disabled:hover:text-gray-300 transition-colors text-[10px] font-medium"
+              >
+                Sebelumnya
+              </button>
+              
+              {/* Page Numbers */}
+              {generatePagination(currentPage, totalPages).map((page, index) => {
+                if (page === '...') {
+                  return (
+                    <span key={`ellipsis-${index}`} className="px-1 text-gray-600 text-[10px]">
+                      ...
+                    </span>
+                  );
+                }
+                return (
+                  <button
+                    key={`page-${page}`}
+                    onClick={() => setCurrentPage(Number(page))}
+                    className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
+                      currentPage === page
+                        ? 'bg-[#b06aee] text-white font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)]'
+                        : 'bg-[#1b202c] border border-white/5 text-gray-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 rounded bg-[#1b202c] border border-white/5 text-gray-300 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-[#1b202c] disabled:hover:text-gray-300 transition-colors text-[10px] font-medium"
+              >
+                Berikutnya
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {isModalOpen && (
