@@ -32,6 +32,8 @@ export default function ProfilPage() {
     confirmNewPassword: ''
   });
   const [formData, setFormData] = useState<any>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
   const [stats, setStats] = useState({
     total: 0,
     proses: 0,
@@ -84,15 +86,40 @@ export default function ProfilPage() {
 
   const handleEditClick = () => {
     setFormData({ ...user });
+    setErrors({});
     setIsEditing(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const newErrors: Record<string, string> = {};
+    if (!formData.nama_lengkap?.trim()) newErrors.nama_lengkap = 'Nama Lengkap wajib diisi';
+    
+    if (!formData.email?.trim()) {
+      newErrors.email = 'Email wajib diisi';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Format email tidak valid';
+    }
+    
+    if (!formData.no_telepon?.trim()) {
+      newErrors.no_telepon = 'No. Telepon wajib diisi';
+    } else if (!/^\+?[0-9]+$/.test(formData.no_telepon)) {
+      newErrors.no_telepon = 'Cuma bisa angka';
+    }
+    
+    if (!formData.alamat?.trim()) newErrors.alamat = 'Alamat wajib diisi';
+    if (!formData.perusahaan?.trim()) newErrors.perusahaan = 'Perusahaan wajib diisi';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     Swal.fire({
       title: 'Menyimpan perubahan...',
       allowOutsideClick: false,
+      theme: 'dark',
       didOpen: () => {
         Swal.showLoading();
       }
@@ -115,6 +142,7 @@ export default function ProfilPage() {
       Swal.fire({
         icon: 'error',
         title: 'Gagal Menyimpan',
+        theme: 'dark',
         text: error.message
       });
       return;
@@ -128,6 +156,7 @@ export default function ProfilPage() {
     Swal.fire({
       icon: 'success',
       title: 'Berhasil',
+      theme: 'dark',
       text: 'Profil berhasil diperbarui!',
       timer: 2000,
       showConfirmButton: false
@@ -144,28 +173,33 @@ export default function ProfilPage() {
   const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const newPassErrors: Record<string, string> = {};
+    if (!passwordForm.oldPassword) {
+      newPassErrors.oldPassword = 'Password lama wajib diisi';
+    }
+    
+    if (!passwordForm.newPassword) {
+      newPassErrors.newPassword = 'Password baru wajib diisi';
+    } else if (passwordForm.newPassword.length < 6) {
+      newPassErrors.newPassword = 'Password baru minimal harus 6 karakter!';
+    }
+    
+    if (!passwordForm.confirmNewPassword) {
+      newPassErrors.confirmNewPassword = 'Konfirmasi password baru wajib diisi';
+    } else if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
+      newPassErrors.confirmNewPassword = 'Konfirmasi password baru tidak cocok!';
+    }
 
-    if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Gagal',
-        text: 'Konfirmasi password baru tidak cocok!'
-      });
+    if (Object.keys(newPassErrors).length > 0) {
+      setPasswordErrors(newPassErrors);
       return;
     }
 
-
-    if (passwordForm.newPassword.length < 6) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Gagal',
-        text: 'Password baru minimal harus 6 karakter!'
-      });
-      return;
-    }
+    setPasswordErrors({});
 
     Swal.fire({
       title: 'Memproses ganti password...',
+      theme: 'dark',
       allowOutsideClick: false,
       didOpen: () => {
         Swal.showLoading();
@@ -186,6 +220,7 @@ export default function ProfilPage() {
         Swal.fire({
           icon: 'error',
           title: 'Gagal',
+          theme: 'dark',
           text: 'Gagal mengambil data user: ' + (fetchError?.message || 'User tidak ditemukan')
         });
         return;
@@ -193,11 +228,8 @@ export default function ProfilPage() {
 
 
       if (userData.password !== passwordForm.oldPassword) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Gagal',
-          text: 'Password lama yang dimasukkan salah!'
-        });
+        setPasswordErrors({ oldPassword: 'Password lama yang dimasukkan salah!' });
+        Swal.close();
         return;
       }
 
@@ -210,6 +242,7 @@ export default function ProfilPage() {
         Swal.fire({
           icon: 'error',
           title: 'Gagal',
+          theme: 'dark',
           text: 'Gagal memperbarui password: ' + updateError.message
         });
         return;
@@ -227,12 +260,14 @@ export default function ProfilPage() {
         title: 'Berhasil',
         text: 'Password berhasil diperbarui!',
         timer: 2000,
+        theme: 'dark',
         showConfirmButton: false
       });
     } catch (err: any) {
       Swal.fire({
         icon: 'error',
         title: 'Gagal',
+        theme: 'dark',
         text: 'Terjadi kesalahan: ' + err.message
       });
     }
@@ -251,6 +286,7 @@ export default function ProfilPage() {
           <button 
             onClick={() => {
               setPasswordForm({ oldPassword: '', newPassword: '', confirmNewPassword: '' });
+              setPasswordErrors({});
               setIsChangingPassword(true);
             }}
             className="bg-transparent border border-[#b06aee] hover:bg-[#b06aee]/10 text-[#b06aee] px-5 py-2.5 rounded-md transition-all font-bold text-xs tracking-wider flex items-center gap-2"
@@ -275,10 +311,10 @@ export default function ProfilPage() {
           </div>
           <h3 className="text-lg font-bold text-white tracking-wider mb-2">{user.nama_lengkap || user.username}</h3>
           <p className="text-xs text-gray-500 font-mono tracking-tight mb-6">{user.email}</p>
-          <div className="flex items-center gap-2 text-[#10b981]">
+          {/* <div className="flex items-center gap-2 text-[#10b981]">
             <ShieldCheckIcon className="w-4 h-4" />
             <span className="text-xs font-bold tracking-wider uppercase">User Terverifikasi</span>
-          </div>
+          </div> */}
         </div>
 
         <div className="bg-[#151922] border border-white/5 rounded-lg p-8 flex flex-col relative overflow-hidden lg:col-span-2 min-h-[300px]">
@@ -359,17 +395,24 @@ export default function ProfilPage() {
             
             <h3 className="text-lg font-bold text-white mb-6 tracking-wider">Edit Profil</h3>
             
-            <form onSubmit={handleSave} className="space-y-4">
+            <form onSubmit={handleSave} noValidate className="space-y-4">
               <div>
                 <label className="block text-xs text-gray-400 mb-1 font-mono">Nama Lengkap</label>
                 <input 
                   type="text" 
                   name="nama_lengkap"
                   value={formData.nama_lengkap || ''}
-                  onChange={handleChange}
-                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
-                  required
+                  onChange={e => {
+                    handleChange(e);
+                    if (errors.nama_lengkap) setErrors({...errors, nama_lengkap: ''});
+                  }}
+                  className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
+                    errors.nama_lengkap 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/10 focus:border-[#b06aee]'
+                  }`}
                 />
+                {errors.nama_lengkap && <p className="text-red-500 text-xs mt-1">{errors.nama_lengkap}</p>}
               </div>
               
               <div>
@@ -378,10 +421,17 @@ export default function ProfilPage() {
                   type="email" 
                   name="email"
                   value={formData.email || ''}
-                  onChange={handleChange}
-                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
-                  required
+                  onChange={e => {
+                    handleChange(e);
+                    if (errors.email) setErrors({...errors, email: ''});
+                  }}
+                  className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
+                    errors.email 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/10 focus:border-[#b06aee]'
+                  }`}
                 />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
               
               <div>
@@ -390,10 +440,17 @@ export default function ProfilPage() {
                   type="text" 
                   name="no_telepon"
                   value={formData.no_telepon || ''}
-                  onChange={handleChange}
-                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
-                  required
+                  onChange={e => {
+                    handleChange(e);
+                    if (errors.no_telepon) setErrors({...errors, no_telepon: ''});
+                  }}
+                  className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
+                    errors.no_telepon 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/10 focus:border-[#b06aee]'
+                  }`}
                 />
+                {errors.no_telepon && <p className="text-red-500 text-xs mt-1">{errors.no_telepon}</p>}
               </div>
               
               <div>
@@ -402,10 +459,17 @@ export default function ProfilPage() {
                   type="text" 
                   name="alamat"
                   value={formData.alamat || ''}
-                  onChange={handleChange}
-                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
-                  required
+                  onChange={e => {
+                    handleChange(e);
+                    if (errors.alamat) setErrors({...errors, alamat: ''});
+                  }}
+                  className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
+                    errors.alamat 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/10 focus:border-[#b06aee]'
+                  }`}
                 />
+                {errors.alamat && <p className="text-red-500 text-xs mt-1">{errors.alamat}</p>}
               </div>
               
               <div>
@@ -414,10 +478,17 @@ export default function ProfilPage() {
                   type="text" 
                   name="perusahaan"
                   value={formData.perusahaan || ''}
-                  onChange={handleChange}
-                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
-                  required
+                  onChange={e => {
+                    handleChange(e);
+                    if (errors.perusahaan) setErrors({...errors, perusahaan: ''});
+                  }}
+                  className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
+                    errors.perusahaan 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/10 focus:border-[#b06aee]'
+                  }`}
                 />
+                {errors.perusahaan && <p className="text-red-500 text-xs mt-1">{errors.perusahaan}</p>}
               </div>
  
               <div className="flex justify-end gap-3 mt-6">
@@ -455,17 +526,24 @@ export default function ProfilPage() {
             
             <h3 className="text-lg font-bold text-white mb-6 tracking-wider">Ganti Password</h3>
             
-            <form onSubmit={handlePasswordChangeSubmit} className="space-y-4">
+            <form onSubmit={handlePasswordChangeSubmit} noValidate className="space-y-4">
               <div>
                 <label className="block text-xs text-gray-400 mb-1 font-mono">Password Lama</label>
                 <input 
                   type="password" 
                   value={passwordForm.oldPassword}
-                  onChange={e => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
-                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
-                  required
+                  onChange={e => {
+                    setPasswordForm({ ...passwordForm, oldPassword: e.target.value });
+                    if (passwordErrors.oldPassword) setPasswordErrors({...passwordErrors, oldPassword: ''});
+                  }}
+                  className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
+                    passwordErrors.oldPassword 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/10 focus:border-[#b06aee]'
+                  }`}
                   placeholder="Masukkan password lama"
                 />
+                {passwordErrors.oldPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.oldPassword}</p>}
               </div>
               
               <div>
@@ -473,11 +551,18 @@ export default function ProfilPage() {
                 <input 
                   type="password" 
                   value={passwordForm.newPassword}
-                  onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
-                  required
+                  onChange={e => {
+                    setPasswordForm({ ...passwordForm, newPassword: e.target.value });
+                    if (passwordErrors.newPassword) setPasswordErrors({...passwordErrors, newPassword: ''});
+                  }}
+                  className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
+                    passwordErrors.newPassword 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/10 focus:border-[#b06aee]'
+                  }`}
                   placeholder="Masukkan password baru (min 6 karakter)"
                 />
+                {passwordErrors.newPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.newPassword}</p>}
               </div>
               
               <div>
@@ -485,11 +570,18 @@ export default function ProfilPage() {
                 <input 
                   type="password" 
                   value={passwordForm.confirmNewPassword}
-                  onChange={e => setPasswordForm({ ...passwordForm, confirmNewPassword: e.target.value })}
-                  className="w-full bg-[#1e1a2b] border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-[#b06aee] transition-colors"
-                  required
+                  onChange={e => {
+                    setPasswordForm({ ...passwordForm, confirmNewPassword: e.target.value });
+                    if (passwordErrors.confirmNewPassword) setPasswordErrors({...passwordErrors, confirmNewPassword: ''});
+                  }}
+                  className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
+                    passwordErrors.confirmNewPassword 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/10 focus:border-[#b06aee]'
+                  }`}
                   placeholder="Ulangi password baru"
                 />
+                {passwordErrors.confirmNewPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.confirmNewPassword}</p>}
               </div>
 
               <div className="flex justify-end gap-3 mt-6">

@@ -7,7 +7,7 @@ export const metadata = {
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-[#0e1017] text-gray-200 font-mono flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Cahaya radial latar belakang */}
+      {/* Cahaya ilahi  latar belakang */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute top-1/3 left-1/3 w-[300px] h-[300px] bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none"></div>
 

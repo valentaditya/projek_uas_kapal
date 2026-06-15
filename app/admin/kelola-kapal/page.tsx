@@ -31,6 +31,7 @@ export default function KelolaKapalPage() {
   const [formData, setFormData] = useState({
     name: '', type: '', kapten: '', tujuan: '', region: '', status: '', fuel: '100'
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const fetchKapal = async () => {
     try {
@@ -100,6 +101,7 @@ export default function KelolaKapalPage() {
   const openAddModal = () => {
     setEditingShip(null);
     setFormData({ name: '', type: '', kapten: '', tujuan: '', region: '', status: '', fuel: '100' });
+    setErrors({});
     setIsModalOpen(true);
   };
 
@@ -115,15 +117,41 @@ export default function KelolaKapalPage() {
       status: ship.status,
       fuel: fuelVal
     });
+    setErrors({});
     setIsModalOpen(true);
   };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const newErrors: Record<string, string> = {};
+    if (!formData.name.trim()) newErrors.name = 'Nama Kapal wajib diisi';
+    if (!formData.type.trim()) newErrors.type = 'Tipe Kapal wajib diisi';
+    if (!formData.kapten.trim()) newErrors.kapten = 'Nama Kapten wajib diisi';
+    if (!formData.tujuan.trim()) newErrors.tujuan = 'Tujuan wajib diisi';
+    if (!formData.region.trim()) newErrors.region = 'Region wajib diisi';
+    if (!formData.status) newErrors.status = 'Status wajib dipilih';
+    
+    if (!formData.fuel) {
+      newErrors.fuel = 'Fuel wajib diisi';
+    } else if (!/^\d+(\.\d+)?$/.test(formData.fuel)) {
+      newErrors.fuel = 'Cuma bisa angka';
+    } else {
+      const fuelVal = parseFloat(formData.fuel);
+      if (fuelVal < 0 || fuelVal > 100) {
+        newErrors.fuel = 'Fuel harus di antara 0 dan 100';
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     Swal.fire({
       title: editingShip ? 'Memperbarui Kapal...' : 'Menambahkan Kapal...',
       allowOutsideClick: false,
+      theme: 'dark',
       didOpen: () => {
         Swal.showLoading();
       }
@@ -150,6 +178,7 @@ export default function KelolaKapalPage() {
           title: 'Berhasil!',
           text: 'Data kapal berhasil diperbarui.',
           timer: 1500,
+          theme: 'dark',
           showConfirmButton: false
         });
         fetchKapal();
@@ -159,7 +188,8 @@ export default function KelolaKapalPage() {
         Swal.fire({
           icon: 'error',
           title: 'Gagal!',
-          text: 'Gagal memperbarui data: ' + error.message
+          text: 'Gagal memperbarui data: ' + error.message,
+          theme: 'dark'
         });
       }
     } else {
@@ -172,6 +202,7 @@ export default function KelolaKapalPage() {
           title: 'Berhasil!',
           text: 'Kapal baru berhasil ditambahkan.',
           timer: 1500,
+          theme: 'dark',
           showConfirmButton: false
         });
         fetchKapal();
@@ -180,6 +211,7 @@ export default function KelolaKapalPage() {
         Swal.fire({
           icon: 'error',
           title: 'Gagal!',
+          theme: 'dark',
           text: 'Gagal menambahkan kapal: ' + error.message
         });
       }
@@ -195,13 +227,15 @@ export default function KelolaKapalPage() {
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'Ya, Hapus!',
-      cancelButtonText: 'Batal'
+      cancelButtonText: 'Batal',
+      theme: 'dark'
     });
 
     if (result.isConfirmed) {
       Swal.fire({
         title: 'Menghapus Kapal...',
         allowOutsideClick: false,
+        theme: 'dark',
         didOpen: () => {
           Swal.showLoading();
         }
@@ -216,6 +250,7 @@ export default function KelolaKapalPage() {
           icon: 'success',
           title: 'Dihapus!',
           text: 'Data kapal berhasil dihapus.',
+          theme: 'dark',
           timer: 1500,
           showConfirmButton: false
         });
@@ -224,6 +259,7 @@ export default function KelolaKapalPage() {
         Swal.fire({
           icon: 'error',
           title: 'Gagal!',
+          theme: 'dark',
           text: 'Gagal menghapus data: ' + error.message
         });
       }
@@ -359,65 +395,106 @@ export default function KelolaKapalPage() {
               </h3>
             </div>
             
-            <form onSubmit={handleAddSubmit} className="p-6">
+            <form onSubmit={handleAddSubmit} noValidate className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Kapal *</label>
                   <input 
-                    required 
                     type="text" 
-                    value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    value={formData.name} onChange={e => {
+                      setFormData({...formData, name: e.target.value});
+                      if (errors.name) setErrors({...errors, name: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.name 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Tipe Kapal *</label>
                   <input 
-                    required 
                     type="text" 
-                    value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    value={formData.type} onChange={e => {
+                      setFormData({...formData, type: e.target.value});
+                      if (errors.type) setErrors({...errors, type: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.type 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type}</p>}
                 </div>
                 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Kapten *</label>
                   <input 
-                    required 
                     type="text" 
                     placeholder="Kapten..."
-                    value={formData.kapten} onChange={e => setFormData({...formData, kapten: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder:text-gray-600"
+                    value={formData.kapten} onChange={e => {
+                      setFormData({...formData, kapten: e.target.value});
+                      if (errors.kapten) setErrors({...errors, kapten: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder:text-gray-600 ${
+                      errors.kapten 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.kapten && <p className="text-red-500 text-xs mt-1">{errors.kapten}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Tujuan *</label>
                   <input 
-                    required 
                     type="text" 
-                    value={formData.tujuan} onChange={e => setFormData({...formData, tujuan: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    value={formData.tujuan} onChange={e => {
+                      setFormData({...formData, tujuan: e.target.value});
+                      if (errors.tujuan) setErrors({...errors, tujuan: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.tujuan 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.tujuan && <p className="text-red-500 text-xs mt-1">{errors.tujuan}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Region *</label>
                   <input 
-                    required 
                     type="text" 
-                    value={formData.region} onChange={e => setFormData({...formData, region: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    value={formData.region} onChange={e => {
+                      setFormData({...formData, region: e.target.value});
+                      if (errors.region) setErrors({...errors, region: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.region 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Status *</label>
                   <div className="relative">
                     <select 
-                      required 
                       value={formData.status} 
-                      onChange={e => setFormData({...formData, status: e.target.value})}
-                      className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none cursor-pointer"
+                      onChange={e => {
+                        setFormData({...formData, status: e.target.value});
+                        if (errors.status) setErrors({...errors, status: ''});
+                      }}
+                      className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 appearance-none cursor-pointer ${
+                        errors.status 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                          : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                      }`}
                     >
                       <option value="" disabled>Pilih Status</option>
                       <option value="En Route">En Route</option>
@@ -425,20 +502,25 @@ export default function KelolaKapalPage() {
                       <option value="Delayed">Delayed</option>
                       <option value="Maintenance">Maintenance</option>
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
+                    
                   </div>
+                  {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Fuel (%) *</label>
                   <input 
-                    required 
-                    type="number" 
-                    min="0" max="100"
-                    value={formData.fuel} onChange={e => setFormData({...formData, fuel: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    type="text" 
+                    value={formData.fuel} onChange={e => {
+                      setFormData({...formData, fuel: e.target.value});
+                      if (errors.fuel) setErrors({...errors, fuel: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.fuel 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.fuel && <p className="text-red-500 text-xs mt-1">{errors.fuel}</p>}
                 </div>
               </div>
 

@@ -23,6 +23,7 @@ export default function KelolaUserPage() {
   const [formData, setFormData] = useState({
     username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '', password: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,11 +86,37 @@ export default function KelolaUserPage() {
       location: user.alamat || '',
       password: user.password || ''
     });
+    setErrors({});
     setIsModalOpen(true);
   };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const newErrors: Record<string, string> = {};
+    if (!formData.username.trim()) newErrors.username = 'Username wajib diisi';
+    if (!editingUser && !formData.password.trim()) newErrors.password = 'Password wajib diisi';
+    if (!formData.name.trim()) newErrors.name = 'Nama Lengkap wajib diisi';
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email wajib diisi';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Format email tidak valid';
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'No. Telepon wajib diisi';
+    } else if (!/^\+?[0-9]+$/.test(formData.phone)) {
+      newErrors.phone = 'Cuma bisa angka';
+    }
+    
+    if (!formData.role) newErrors.role = 'Role wajib dipilih';
+    if (!formData.status) newErrors.status = 'Status wajib dipilih';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
     
 
     const payload: any = {
@@ -157,6 +184,7 @@ export default function KelolaUserPage() {
           onClick={() => {
             setEditingUser(null);
             setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '', password: '' });
+            setErrors({});
             setIsModalOpen(true);
           }}
           className="bg-[#b06aee] hover:bg-[#9a54d6] text-white px-4 py-2 rounded-md shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all font-bold text-xs tracking-wider flex items-center gap-2"
@@ -372,12 +400,11 @@ export default function KelolaUserPage() {
               </h3>
             </div>
             
-            <form onSubmit={handleAddSubmit} className="p-6">
+            <form onSubmit={handleAddSubmit} noValidate className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Username *</label>
                   <input 
-                    required 
                     type="text" 
                     value={formData.username} 
                     onChange={e => {
@@ -387,60 +414,100 @@ export default function KelolaUserPage() {
                         username: newUsername,
                         password: (!editingUser && (prev.password === prev.username || prev.password === '')) ? newUsername : prev.password
                       }));
+                      if (errors.username) setErrors(prev => ({ ...prev, username: '' }));
                     }}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.username 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono font-sans">
                     {editingUser ? 'Password (Kosongkan jika tidak diubah)' : 'Password (Default: username) *'}
                   </label>
                   <input 
-                    required={!editingUser}
                     type="text" 
                     value={formData.password} 
-                    onChange={e => setFormData({...formData, password: e.target.value})}
+                    onChange={e => {
+                      setFormData({...formData, password: e.target.value});
+                      if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
+                    }}
                     placeholder={editingUser ? '••••••••' : 'Masukkan password'}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.password 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Lengkap *</label>
                   <input 
-                    required 
                     type="text" 
-                    value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    value={formData.name} onChange={e => {
+                      setFormData({...formData, name: e.target.value});
+                      if (errors.name) setErrors(prev => ({ ...prev, name: '' }));
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.name 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email *</label>
                   <input 
-                    required 
                     type="email" 
-                    value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    value={formData.email} onChange={e => {
+                      setFormData({...formData, email: e.target.value});
+                      if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.email 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">No. Telepon *</label>
                   <input 
-                    required 
                     type="text" 
-                    value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
+                    value={formData.phone} onChange={e => {
+                      setFormData({...formData, phone: e.target.value});
+                      if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
+                      errors.phone 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`}
                   />
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Role *</label>
                   <div className="relative">
                     <select 
-                      required 
                       value={formData.role} 
-                      onChange={e => setFormData({...formData, role: e.target.value})}
-                      className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none bg-none cursor-pointer"
+                      onChange={e => {
+                        setFormData({...formData, role: e.target.value});
+                        if (errors.role) setErrors(prev => ({ ...prev, role: '' }));
+                      }}
+                      className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 appearance-none bg-none cursor-pointer ${
+                        errors.role 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                          : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                      }`}
                     >
                       <option value="" disabled>Pilih Role</option>
                       <option value="Admin">Admin</option>
@@ -450,15 +517,22 @@ export default function KelolaUserPage() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
+                  {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Status *</label>
                   <div className="relative">
                     <select 
-                      required 
                       value={formData.status} 
-                      onChange={e => setFormData({...formData, status: e.target.value})}
-                      className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none bg-none cursor-pointer"
+                      onChange={e => {
+                        setFormData({...formData, status: e.target.value});
+                        if (errors.status) setErrors(prev => ({ ...prev, status: '' }));
+                      }}
+                      className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 appearance-none bg-none cursor-pointer ${
+                        errors.status 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                          : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                      }`}
                     >
                       <option value="" disabled>Pilih Status</option>
                       <option value="Aktif">Aktif</option>
@@ -468,6 +542,7 @@ export default function KelolaUserPage() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
+                  {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
                 </div>
 
                 <div className="md:col-span-2">

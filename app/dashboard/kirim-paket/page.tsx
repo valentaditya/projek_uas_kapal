@@ -35,6 +35,8 @@ export default function KirimPaketPage() {
     namaPenerima: '', emailPenerima: '', teleponPenerima: '', alamatPenerima: '',
     asal: '', tujuan: '', tanggal: '', catatan: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [itemErrors, setItemErrors] = useState<Record<string, string>>({});
 
   const [cart, setCart] = useState<any[]>([]);
   const [useInsurance, setUseInsurance] = useState(false);
@@ -93,23 +95,31 @@ export default function KirimPaketPage() {
   const handleAddItem = (e: React.MouseEvent) => {
     e.preventDefault();
 
-    if (!itemForm.berat || parseFloat(itemForm.berat) <= 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Input Tidak Valid',
-        text: 'Berat barang harus lebih besar dari 0!'
-      });
-      return;
+    const newItemErrors: Record<string, string> = {};
+    if (!itemForm.berat) {
+      newItemErrors.berat = 'Berat barang wajib diisi';
+    } else if (!/^\d+(\.\d+)?$/.test(itemForm.berat)) {
+      newItemErrors.berat = 'Cuma bisa angka';
+    } else if (parseFloat(itemForm.berat) <= 0) {
+      newItemErrors.berat = 'Berat barang harus lebih besar dari 0!';
+    }
+
+    if (itemForm.volume && !/^\d+(\.\d+)?$/.test(itemForm.volume)) {
+      newItemErrors.volume = 'Cuma bisa angka';
+    } else if (itemForm.volume && parseFloat(itemForm.volume) < 0) {
+      newItemErrors.volume = 'Volume barang tidak boleh negatif';
     }
 
     if (!itemForm.deskripsi.trim()) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Input Tidak Valid',
-        text: 'Deskripsi barang tidak boleh kosong!'
-      });
+      newItemErrors.deskripsi = 'Deskripsi barang tidak boleh kosong!';
+    }
+
+    if (Object.keys(newItemErrors).length > 0) {
+      setItemErrors(newItemErrors);
       return;
     }
+
+    setItemErrors({});
 
     const cargoTypeObj = CARGO_TYPES.find(c => c.value === itemForm.jenis) || CARGO_TYPES[4];
     const beratVal = parseFloat(itemForm.berat) || 0;
@@ -135,6 +145,7 @@ export default function KirimPaketPage() {
         title: 'Barang Diperbarui',
         text: 'Detail barang berhasil diperbarui!',
         toast: true,
+        theme: 'dark',
         position: 'top-end',
         showConfirmButton: false,
         timer: 3000
@@ -173,6 +184,7 @@ export default function KirimPaketPage() {
       deskripsi: item.deskripsi,
       catatanBarang: item.catatan || ''
     });
+    setItemErrors({});
   };
 
 
@@ -191,20 +203,44 @@ export default function KirimPaketPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const newErrors: Record<string, string> = {};
+    if (!formData.nama.trim()) newErrors.nama = 'Nama Pengirim wajib diisi';
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email wajib diisi';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Format email tidak valid';
+    }
+    
+    if (!formData.telepon.trim()) {
+      newErrors.telepon = 'Nomor Telepon wajib diisi';
+    } else if (!/^\+?[0-9]+$/.test(formData.telepon)) {
+      newErrors.telepon = 'Cuma bisa angka';
+    }
+    
+    if (!formData.namaPenerima.trim()) newErrors.namaPenerima = 'Nama Penerima wajib diisi';
+    if (formData.emailPenerima && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailPenerima)) {
+      newErrors.emailPenerima = 'Format email tidak valid';
+    }
+    if (formData.teleponPenerima && !/^\+?[0-9]+$/.test(formData.teleponPenerima)) {
+      newErrors.teleponPenerima = 'Cuma bisa angka';
+    }
+    
+    if (!formData.asal) newErrors.asal = 'Pelabuhan Asal wajib dipilih';
+    if (!formData.tujuan) newErrors.tujuan = 'Pelabuhan Tujuan wajib dipilih';
+    if (!formData.tanggal) newErrors.tanggal = 'Tanggal wajib diisi';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     if (cart.length === 0) {
       Swal.fire({
         icon: 'warning',
         title: 'Keranjang Kosong',
+        theme: 'dark',
         text: 'Silakan tambahkan minimal satu barang ke dalam keranjang sebelum mengirim!'
-      });
-      return;
-    }
-
-    if (!formData.nama.trim() || !formData.telepon.trim() || !formData.namaPenerima.trim() || !formData.asal.trim() || !formData.tujuan.trim() || !formData.tanggal) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Data Belum Lengkap',
-        text: 'Silakan isi semua data pengirim, penerima, dan detail rute yang berbintang (*)'
       });
       return;
     }
@@ -276,7 +312,8 @@ export default function KirimPaketPage() {
       confirmButtonColor: '#a855f7',
       cancelButtonColor: '#374151',
       confirmButtonText: 'Konfirmasi & Kirim',
-      cancelButtonText: 'Batal'
+      cancelButtonText: 'Batal',
+      theme: 'dark'
     });
 
     if (!confirmResult.isConfirmed) return;
@@ -284,6 +321,7 @@ export default function KirimPaketPage() {
     Swal.fire({
       title: 'Memproses Pengiriman...',
       allowOutsideClick: false,
+      theme: 'dark',
       didOpen: () => {
         Swal.showLoading();
       }
@@ -295,7 +333,8 @@ export default function KirimPaketPage() {
       const itemCount = cart.length;
       const originPortId = formData.asal;
       const insuranceIndicator = useInsurance ? '1' : '0';
-      const resi = `AO-${shippingYear}-${itemCount}${originPortId}${insuranceIndicator}`;
+      const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const resi = `AO-${shippingYear}-${itemCount}${originPortId}${insuranceIndicator}${randomSuffix}`;
 
 
       const { data: shipment, error: errShipment } = await // cara memasukkan data ke db
@@ -390,7 +429,8 @@ export default function KirimPaketPage() {
         icon: 'success',
         title: 'Pengiriman Berhasil Dibuat!',
         html: `Nomor Resi Anda: <strong class="text-purple-400 font-mono">${resi}</strong><br/>Silakan pantau status pengiriman pada dashboard.`,
-        confirmButtonColor: '#a855f7'
+        confirmButtonColor: '#a855f7',
+        theme: 'dark'
       });
 
 
@@ -401,12 +441,15 @@ export default function KirimPaketPage() {
         namaPenerima: '', emailPenerima: '', teleponPenerima: '', alamatPenerima: '',
         asal: '', tujuan: '', tanggal: '', catatan: ''
       }));
+      setErrors({});
+      setItemErrors({});
 
     } catch (error: any) {
       console.error(error);
       Swal.fire({
         icon: 'error',
         title: 'Terjadi Kesalahan',
+        theme: 'dark',
         text: error.message || 'Gagal menyimpan pengiriman. Silakan coba kembali.'
       });
     }
@@ -420,7 +463,7 @@ export default function KirimPaketPage() {
         <p className="text-gray-400 text-xs tracking-wider">Isi formulir di bawah untuk membuat request pengiriman barang melalui jalur laut</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} noValidate className="space-y-6">
         
         
         <div className="bg-[#151922] border border-white/5 rounded-lg p-6">
@@ -433,31 +476,52 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Pengirim <span className="text-rose-500">*</span></label>
               <input 
                 type="text" 
-                required 
                 value={formData.nama} 
-                onChange={e => setFormData({...formData, nama: e.target.value})}
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                onChange={e => {
+                  setFormData({...formData, nama: e.target.value});
+                  if (errors.nama) setErrors({...errors, nama: ''});
+                }}
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                  errors.nama 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {errors.nama && <p className="text-red-500 text-xs mt-1">{errors.nama}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email <span className="text-rose-500">*</span></label>
               <input 
                 type="email" 
-                required 
                 value={formData.email} 
-                onChange={e => setFormData({...formData, email: e.target.value})}
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                onChange={e => {
+                  setFormData({...formData, email: e.target.value});
+                  if (errors.email) setErrors({...errors, email: ''});
+                }}
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                  errors.email 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nomor Telepon <span className="text-rose-500">*</span></label>
               <input 
-                type="tel" 
-                required 
+                type="text" 
                 value={formData.telepon} 
-                onChange={e => setFormData({...formData, telepon: e.target.value})}
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                onChange={e => {
+                  setFormData({...formData, telepon: e.target.value});
+                  if (errors.telepon) setErrors({...errors, telepon: ''});
+                }}
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                  errors.telepon 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {errors.telepon && <p className="text-red-500 text-xs mt-1">{errors.telepon}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Alamat</label>
@@ -482,29 +546,52 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Penerima <span className="text-rose-500">*</span></label>
               <input 
                 type="text" 
-                required 
                 value={formData.namaPenerima}
-                onChange={e => setFormData({...formData, namaPenerima: e.target.value})}
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                onChange={e => {
+                  setFormData({...formData, namaPenerima: e.target.value});
+                  if (errors.namaPenerima) setErrors({...errors, namaPenerima: ''});
+                }}
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                  errors.namaPenerima 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {errors.namaPenerima && <p className="text-red-500 text-xs mt-1">{errors.namaPenerima}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email</label>
               <input 
                 type="email" 
                 value={formData.emailPenerima}
-                onChange={e => setFormData({...formData, emailPenerima: e.target.value})}
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                onChange={e => {
+                  setFormData({...formData, emailPenerima: e.target.value});
+                  if (errors.emailPenerima) setErrors({...errors, emailPenerima: ''});
+                }}
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                  errors.emailPenerima 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {errors.emailPenerima && <p className="text-red-500 text-xs mt-1">{errors.emailPenerima}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nomor Telepon</label>
               <input 
-                type="tel" 
+                type="text" 
                 value={formData.teleponPenerima}
-                onChange={e => setFormData({...formData, teleponPenerima: e.target.value})}
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                onChange={e => {
+                  setFormData({...formData, teleponPenerima: e.target.value});
+                  if (errors.teleponPenerima) setErrors({...errors, teleponPenerima: ''});
+                }}
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                  errors.teleponPenerima 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {errors.teleponPenerima && <p className="text-red-500 text-xs mt-1">{errors.teleponPenerima}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Alamat</label>
@@ -529,10 +616,16 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Pelabuhan Asal <span className="text-rose-500">*</span></label>
               <div className="relative">
                 <select 
-                  required 
                   value={formData.asal}
-                  onChange={e => setFormData({...formData, asal: e.target.value})}
-                  className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none cursor-pointer"
+                  onChange={e => {
+                    setFormData({...formData, asal: e.target.value});
+                    if (errors.asal) setErrors({...errors, asal: ''});
+                  }}
+                  className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 appearance-none cursor-pointer ${
+                    errors.asal 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                      : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                  }`}
                 >
                   <option value="">-- Pilih Pelabuhan Asal --</option>
                   {ports.map(p => (
@@ -543,15 +636,22 @@ export default function KirimPaketPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
+              {errors.asal && <p className="text-red-500 text-xs mt-1">{errors.asal}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Pelabuhan Tujuan <span className="text-rose-500">*</span></label>
               <div className="relative">
                 <select 
-                  required 
                   value={formData.tujuan}
-                  onChange={e => setFormData({...formData, tujuan: e.target.value})}
-                  className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none cursor-pointer"
+                  onChange={e => {
+                    setFormData({...formData, tujuan: e.target.value});
+                    if (errors.tujuan) setErrors({...errors, tujuan: ''});
+                  }}
+                  className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 appearance-none cursor-pointer ${
+                    errors.tujuan 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                      : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                  }`}
                 >
                   <option value="">-- Pilih Pelabuhan Tujuan --</option>
                   {ports.map(p => (
@@ -562,16 +662,24 @@ export default function KirimPaketPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
+              {errors.tujuan && <p className="text-red-500 text-xs mt-1">{errors.tujuan}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Tanggal Pengiriman <span className="text-rose-500">*</span></label>
               <input 
                 type="date" 
-                required 
                 value={formData.tanggal}
-                onChange={e => setFormData({...formData, tanggal: e.target.value})}
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 font-mono tracking-tight" 
+                onChange={e => {
+                  setFormData({...formData, tanggal: e.target.value});
+                  if (errors.tanggal) setErrors({...errors, tanggal: ''});
+                }}
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:ring-1 font-mono tracking-tight ${
+                  errors.tanggal 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {errors.tanggal && <p className="text-red-500 text-xs mt-1">{errors.tanggal}</p>}
             </div>
           </div>
         </div>
@@ -603,32 +711,56 @@ export default function KirimPaketPage() {
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Berat Barang (kg) <span className="text-rose-500">*</span></label>
               <input 
-                type="number" 
+                type="text" 
                 value={itemForm.berat}
-                onChange={e => setItemForm({...itemForm, berat: e.target.value})}
+                onChange={e => {
+                  setItemForm({...itemForm, berat: e.target.value});
+                  if (itemErrors.berat) setItemErrors({...itemErrors, berat: ''});
+                }}
                 placeholder="Berat dalam kg" 
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 font-mono tracking-tight ${
+                  itemErrors.berat 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {itemErrors.berat && <p className="text-red-500 text-xs mt-1">{itemErrors.berat}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Volume Barang (m³)</label>
               <input 
-                type="number" 
+                type="text" 
                 value={itemForm.volume}
-                onChange={e => setItemForm({...itemForm, volume: e.target.value})}
+                onChange={e => {
+                  setItemForm({...itemForm, volume: e.target.value});
+                  if (itemErrors.volume) setItemErrors({...itemErrors, volume: ''});
+                }}
                 placeholder="Volume dalam m³" 
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 font-mono tracking-tight ${
+                  itemErrors.volume 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {itemErrors.volume && <p className="text-red-500 text-xs mt-1">{itemErrors.volume}</p>}
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Deskripsi Kargo/Barang <span className="text-rose-500">*</span></label>
               <input 
                 type="text" 
                 value={itemForm.deskripsi}
-                onChange={e => setItemForm({...itemForm, deskripsi: e.target.value})}
+                onChange={e => {
+                  setItemForm({...itemForm, deskripsi: e.target.value});
+                  if (itemErrors.deskripsi) setItemErrors({...itemErrors, deskripsi: ''});
+                }}
                 placeholder="Misal: Lampu LED Philips, Lemari Kayu Jati" 
-                className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 font-mono tracking-tight ${
+                  itemErrors.deskripsi 
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                }`} 
               />
+              {itemErrors.deskripsi && <p className="text-red-500 text-xs mt-1">{itemErrors.deskripsi}</p>}
             </div>
             
             <div className="md:col-span-2">
@@ -791,6 +923,8 @@ export default function KirimPaketPage() {
                 namaPenerima: '', emailPenerima: '', teleponPenerima: '', alamatPenerima: '',
                 asal: '', tujuan: '', tanggal: '', catatan: ''
               }));
+              setErrors({});
+              setItemErrors({});
             }}
             className="px-6 py-2 rounded-md bg-[#6b21a8]/25 text-purple-300 border border-[#b06aee]/20 hover:bg-[#6b21a8]/40 transition-colors font-bold text-xs tracking-wider shadow"
           >
@@ -800,7 +934,7 @@ export default function KirimPaketPage() {
             type="submit" 
             className="px-6 py-2 rounded-md bg-[#a855f7] hover:bg-[#9333ea] text-white transition-colors font-bold text-xs tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center gap-2"
           >
-            <PaperAirplaneIcon className="w-4 h-4" /> Submit Pengiriman
+            <PaperAirplaneIcon className="w-4 h-4" /> Kirim Permintaan
           </button>
         </div>
 

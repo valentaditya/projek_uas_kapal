@@ -131,6 +131,7 @@ export default function ManajemenRutePage() {
       html: popupHtml,
       icon: 'info',
       background: '#151922',
+      theme: 'dark',
       color: '#ffffff',
       confirmButtonColor: '#a855f7',
       confirmButtonText: 'Tutup'

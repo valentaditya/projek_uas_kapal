@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { createClient } from '@/utils/supabase/client';
 import Swal from 'sweetalert2';
+import { generatePagination } from '@/app/lib/utils';
 
 // cara connect db
 const supabase = createClient();
@@ -36,6 +37,8 @@ export default function PengelolaanPengirimanPage() {
   const [search, setSearch] = useState('');
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   
 
   const [ports, setPorts] = useState<any[]>([]);
@@ -51,6 +54,8 @@ export default function PengelolaanPengirimanPage() {
      namaPenerima: '', emailPenerima: '', teleponPenerima: '', alamatPenerima: '',
      asal: '', tujuan: '', tanggal: '', catatan: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [itemErrors, setItemErrors] = useState<Record<string, string>>({});
 
 
   const [cart, setCart] = useState<any[]>([]);
@@ -68,7 +73,8 @@ export default function PengelolaanPengirimanPage() {
   const fetchRequests = async () => {
     try {
       const { data, error } = await // cara ambil data di db
- supabase.from('pengiriman').select('*, detail_barang(*, asuransi_barang(*))');
+ supabase.from('pengiriman').select('*, detail_barang(*, asuransi_barang(*))')
+        .order('id', { ascending: false });
 
       if (data && !error) {
         const formatted = data.map((shipment: any) => {
@@ -177,19 +183,17 @@ export default function PengelolaanPengirimanPage() {
       </style>
       <div class="custom-swal-content" style="text-align: left; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; color: #d1d5db; max-height: 420px; overflow-y: auto; padding-right: 8px; scrollbar-width: thin; scrollbar-color: rgba(176,106,238,0.3) rgba(255,255,255,0.02);">
         
-        <!-- Header Info (Resi & Status Badges) -->
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 12px;">
           <div>
-            <span style="font-size: 10px; color: #9ca3af; font-family: monospace; display: block; margin-bottom: 2px;">NOMOR RESI</span>
+            <span style="font-size: 10px; color: #9ca3af; font-family: monospace; display: block; margin-bottom: 20px;">NOMOR RESI</span>
             <span style="font-family: monospace; color: #c084fc; font-weight: bold; font-size: 13px; background: rgba(176,106,238,0.1); border: 1px solid rgba(176,106,238,0.25); padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px;">${raw.nomor_resi}</span>
           </div>
           <div style="text-align: right;">
-            <span style="font-size: 10px; color: #9ca3af; font-family: monospace; display: block; margin-bottom: 2px;">STATUS</span>
+            <span style="font-size: 10px; color: #9ca3af; font-family: monospace; display: block; margin-bottom: 20px;">STATUS</span>
             <span style="font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; background: ${raw.status === 'Disetujui' ? 'rgba(59,130,246,0.15)' : raw.status === 'Dalam Perjalanan' || raw.status === 'Kirim' ? 'rgba(6,182,214,0.15)' : raw.status === 'Terkirim' ? 'rgba(16,185,129,0.15)' : 'rgba(234,179,8,0.15)'}; color: ${raw.status === 'Disetujui' ? '#60a5fa' : raw.status === 'Dalam Perjalanan' || raw.status === 'Kirim' ? '#22d3ee' : raw.status === 'Terkirim' ? '#34d399' : '#facc15'}; border: 1px solid ${raw.status === 'Disetujui' ? 'rgba(59,130,246,0.3)' : raw.status === 'Dalam Perjalanan' || raw.status === 'Kirim' ? 'rgba(6,182,214,0.3)' : raw.status === 'Terkirim' ? 'rgba(16,185,129,0.3)' : 'rgba(234,179,8,0.3)'};">${raw.status || 'Menunggu Persetujuan'}</span>
           </div>
         </div>
 
-        <!-- Rute & Tanggal -->
         <div style="display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04);">
           <div>
             <strong style="color: #9ca3af; font-size: 9px; display: block; margin-bottom: 3px; font-family: monospace; letter-spacing: 0.5px;">RUTE PELABUHAN</strong>
@@ -205,7 +209,6 @@ export default function PengelolaanPengirimanPage() {
           </div>
         </div>
 
-        <!-- Pengirim & Penerima -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 12px;">
           <div>
             <h5 style="font-weight: bold; color: #a855f7; margin: 0 0 6px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-family: monospace; border-left: 2px solid #a855f7; padding-left: 6px;">Pengirim</h5>
@@ -223,7 +226,6 @@ export default function PengelolaanPengirimanPage() {
           </div>
         </div>
 
-        <!-- Daftar Barang -->
         <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 12px;">
           <h5 style="font-weight: bold; color: #ffffff; margin: 0 0 8px 0; font-size: 11px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.5px;">Daftar Barang (${items.length})</h5>
           <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
@@ -263,7 +265,6 @@ export default function PengelolaanPengirimanPage() {
           </table>
         </div>
 
-        <!-- Ringkasan Biaya -->
         <div style="background: rgba(176,106,238,0.03); border: 1px dashed rgba(176,106,238,0.15); padding: 12px; border-radius: 6px;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #9ca3af;">
             <span>Biaya Kargo Utama:</span>
@@ -289,7 +290,8 @@ export default function PengelolaanPengirimanPage() {
       background: '#151922',
       color: '#ffffff',
       confirmButtonColor: '#a855f7',
-      confirmButtonText: 'Tutup'
+      confirmButtonText: 'Tutup',
+      theme: 'dark'
     });
   };
 
@@ -304,7 +306,8 @@ export default function PengelolaanPengirimanPage() {
       confirmButtonColor: '#10b981',
       cancelButtonColor: '#374151',
       confirmButtonText: 'Ya, Setujui',
-      cancelButtonText: 'Batal'
+      cancelButtonText: 'Batal',
+      theme: 'dark'
     });
 
     if (!confirmResult.isConfirmed) return;
@@ -312,6 +315,7 @@ export default function PengelolaanPengirimanPage() {
     Swal.fire({
       title: 'Memproses...',
       allowOutsideClick: false,
+      theme: 'dark',
       didOpen: () => {
         Swal.showLoading();
       }
@@ -335,6 +339,7 @@ export default function PengelolaanPengirimanPage() {
       await Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
+        theme: 'dark',
         text: `Pengiriman dengan Resi ${req.id} telah disetujui.`,
         confirmButtonColor: '#10b981'
       });
@@ -345,7 +350,8 @@ export default function PengelolaanPengirimanPage() {
       Swal.fire({
         icon: 'error',
         title: 'Gagal',
-        text: err.message || 'Terjadi kesalahan saat menyetujui pengiriman.'
+        text: err.message || 'Terjadi kesalahan saat menyetujui pengiriman.',
+        theme: 'dark'
       });
     }
   };
@@ -361,7 +367,8 @@ export default function PengelolaanPengirimanPage() {
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#374151',
       confirmButtonText: 'Ya, Tolak & Hapus',
-      cancelButtonText: 'Batal'
+      cancelButtonText: 'Batal',
+      theme: 'dark'
     });
 
     if (!confirmResult.isConfirmed) return;
@@ -369,6 +376,7 @@ export default function PengelolaanPengirimanPage() {
     Swal.fire({
       title: 'Memproses...',
       allowOutsideClick: false,
+      theme: 'dark',
       didOpen: () => {
         Swal.showLoading();
       }
@@ -423,7 +431,8 @@ export default function PengelolaanPengirimanPage() {
         icon: 'success',
         title: 'Berhasil!',
         text: `Pengiriman dengan Resi ${req.id} telah ditolak dan dihapus.`,
-        confirmButtonColor: '#ef4444'
+        confirmButtonColor: '#ef4444',
+        theme: 'dark'
       });
 
       fetchRequests();
@@ -432,6 +441,7 @@ export default function PengelolaanPengirimanPage() {
       Swal.fire({
         icon: 'error',
         title: 'Gagal',
+        theme: 'dark',
         text: err.message || 'Terjadi kesalahan saat menolak pengiriman.'
       });
     }
@@ -448,7 +458,8 @@ export default function PengelolaanPengirimanPage() {
       confirmButtonColor: '#10b981',
       cancelButtonColor: '#374151',
       confirmButtonText: 'Ya, Kirim',
-      cancelButtonText: 'Batal'
+      cancelButtonText: 'Batal',
+      theme: 'dark'
     });
 
     if (!confirmResult.isConfirmed) return;
@@ -456,6 +467,7 @@ export default function PengelolaanPengirimanPage() {
     Swal.fire({
       title: 'Memproses...',
       allowOutsideClick: false,
+      theme: 'dark',
       didOpen: () => {
         Swal.showLoading();
       }
@@ -480,7 +492,8 @@ export default function PengelolaanPengirimanPage() {
         icon: 'success',
         title: 'Berhasil!',
         text: `Pengiriman dengan Resi ${req.id} statusnya diubah menjadi Kirim.`,
-        confirmButtonColor: '#10b981'
+        confirmButtonColor: '#10b981',
+        theme: 'dark'
       });
 
       fetchRequests();
@@ -489,6 +502,7 @@ export default function PengelolaanPengirimanPage() {
       Swal.fire({
         icon: 'error',
         title: 'Gagal',
+        theme: 'dark',
         text: err.message || 'Terjadi kesalahan saat mengirim paket.'
       });
     }
@@ -521,23 +535,31 @@ export default function PengelolaanPengirimanPage() {
   const handleAddItem = (e: React.MouseEvent) => {
     e.preventDefault();
 
-    if (!itemForm.berat || parseFloat(itemForm.berat) <= 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Input Tidak Valid',
-        text: 'Berat barang harus lebih besar dari 0!'
-      });
-      return;
+    const newItemErrors: Record<string, string> = {};
+    if (!itemForm.berat) {
+      newItemErrors.berat = 'Berat barang wajib diisi';
+    } else if (!/^\d+(\.\d+)?$/.test(itemForm.berat)) {
+      newItemErrors.berat = 'Cuma bisa angka';
+    } else if (parseFloat(itemForm.berat) <= 0) {
+      newItemErrors.berat = 'Berat barang harus lebih besar dari 0!';
+    }
+
+    if (itemForm.volume && !/^\d+(\.\d+)?$/.test(itemForm.volume)) {
+      newItemErrors.volume = 'Cuma bisa angka';
+    } else if (itemForm.volume && parseFloat(itemForm.volume) < 0) {
+      newItemErrors.volume = 'Volume barang tidak boleh negatif';
     }
 
     if (!itemForm.deskripsi.trim()) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Input Tidak Valid',
-        text: 'Deskripsi kargo tidak boleh kosong!'
-      });
+      newItemErrors.deskripsi = 'Deskripsi kargo tidak boleh kosong!';
+    }
+
+    if (Object.keys(newItemErrors).length > 0) {
+      setItemErrors(newItemErrors);
       return;
     }
+
+    setItemErrors({});
 
     const typeObj = CARGO_TYPES.find(c => c.value === itemForm.jenis) || CARGO_TYPES[4];
     const beratVal = parseFloat(itemForm.berat) || 0;
@@ -564,6 +586,7 @@ export default function PengelolaanPengirimanPage() {
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
+        theme: 'dark',
         timer: 3000
       });
     } else {
@@ -598,6 +621,7 @@ export default function PengelolaanPengirimanPage() {
       deskripsi: item.deskripsi,
       catatanBarang: item.catatan || ''
     });
+    setItemErrors({});
   };
 
   const handleRemoveItem = (id: string) => {
@@ -621,15 +645,50 @@ export default function PengelolaanPengirimanPage() {
       namaPenerima: '', emailPenerima: '', teleponPenerima: '', alamatPenerima: '',
       asal: '', tujuan: '', tanggal: '', catatan: ''
     });
+    setErrors({});
+    setItemErrors({});
   };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const newErrors: Record<string, string> = {};
+    if (!formData.nama.trim()) newErrors.nama = 'Nama Pengirim wajib diisi';
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email wajib diisi';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Format email tidak valid';
+    }
+    
+    if (!formData.telepon.trim()) {
+      newErrors.telepon = 'Nomor Telepon wajib diisi';
+    } else if (!/^\+?[0-9]+$/.test(formData.telepon)) {
+      newErrors.telepon = 'Cuma bisa angka';
+    }
+    
+    if (!formData.namaPenerima.trim()) newErrors.namaPenerima = 'Nama Penerima wajib diisi';
+    if (formData.emailPenerima && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailPenerima)) {
+      newErrors.emailPenerima = 'Format email tidak valid';
+    }
+    if (formData.teleponPenerima && !/^\+?[0-9]+$/.test(formData.teleponPenerima)) {
+      newErrors.teleponPenerima = 'Cuma bisa angka';
+    }
+    
+    if (!formData.asal) newErrors.asal = 'Pelabuhan Asal wajib dipilih';
+    if (!formData.tujuan) newErrors.tujuan = 'Pelabuhan Tujuan wajib dipilih';
+    if (!formData.tanggal) newErrors.tanggal = 'Tanggal wajib diisi';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     if (cart.length === 0) {
       Swal.fire({
         icon: 'warning',
         title: 'Keranjang Kosong',
+        theme: 'dark',
         text: 'Silakan tambahkan minimal satu barang ke keranjang!'
       });
       return;
@@ -702,7 +761,8 @@ export default function PengelolaanPengirimanPage() {
       confirmButtonColor: '#a855f7',
       cancelButtonColor: '#374151',
       confirmButtonText: 'Konfirmasi & Kirim',
-      cancelButtonText: 'Batal'
+      cancelButtonText: 'Batal',
+      theme: 'dark'
     });
 
     if (!confirmResult.isConfirmed) return;
@@ -710,6 +770,7 @@ export default function PengelolaanPengirimanPage() {
     Swal.fire({
       title: 'Menyimpan Pengiriman...',
       allowOutsideClick: false,
+      theme: 'dark',
       didOpen: () => {
         Swal.showLoading();
       }
@@ -721,7 +782,8 @@ export default function PengelolaanPengirimanPage() {
       const itemCount = cart.length;
       const originPortId = formData.asal;
       const insuranceIndicator = useInsurance ? '1' : '0';
-      const resi = `AO-${shippingYear}-${itemCount}${originPortId}${insuranceIndicator}`;
+      const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const resi = `AO-${shippingYear}-${itemCount}${originPortId}${insuranceIndicator}${randomSuffix}`;
       
 
       const { data: shipment, error: errShipment } = await // cara memasukkan data ke db
@@ -813,6 +875,7 @@ export default function PengelolaanPengirimanPage() {
       await Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
+        theme: 'dark',
         html: `Pengiriman dengan Resi <strong class="text-purple-400 font-mono">${resi}</strong> berhasil dibuat.`,
         confirmButtonColor: '#a855f7'
       });
@@ -826,6 +889,7 @@ export default function PengelolaanPengirimanPage() {
       Swal.fire({
         icon: 'error',
         title: 'Gagal Menyimpan',
+        theme: 'dark',
         text: error.message || 'Terjadi kesalahan saat menyimpan pengiriman.'
       });
     }
@@ -868,6 +932,12 @@ export default function PengelolaanPengirimanPage() {
     return matchesFilter && matchesSearch;
   });
 
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
       <div className="mb-8">
@@ -907,7 +977,7 @@ export default function PengelolaanPengirimanPage() {
             <p className="text-[#8c94a3] text-xs font-mono">Isi form di bawah untuk membuat request pengiriman baru atas nama Customer</p>
           </div>
 
-          <form onSubmit={handleAddSubmit} onReset={handleReset} className="space-y-6">
+          <form onSubmit={handleAddSubmit} onReset={handleReset} noValidate className="space-y-6">
             
             
             <div className="bg-[#151922] border border-white/5 rounded-lg p-6">
@@ -937,31 +1007,52 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Pengirim <span className="text-rose-500">*</span></label>
                   <input 
                     type="text" 
-                    required 
                     value={formData.nama}
-                    onChange={e => setFormData({...formData, nama: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                    onChange={e => {
+                      setFormData({...formData, nama: e.target.value});
+                      if (errors.nama) setErrors({...errors, nama: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                      errors.nama 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {errors.nama && <p className="text-red-500 text-xs mt-1">{errors.nama}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email <span className="text-rose-500">*</span></label>
                   <input 
                     type="email" 
-                    required 
                     value={formData.email}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                    onChange={e => {
+                      setFormData({...formData, email: e.target.value});
+                      if (errors.email) setErrors({...errors, email: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                      errors.email 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nomor Telepon <span className="text-rose-500">*</span></label>
                   <input 
-                    type="tel" 
-                    required 
+                    type="text" 
                     value={formData.telepon}
-                    onChange={e => setFormData({...formData, telepon: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                    onChange={e => {
+                      setFormData({...formData, telepon: e.target.value});
+                      if (errors.telepon) setErrors({...errors, telepon: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                      errors.telepon 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {errors.telepon && <p className="text-red-500 text-xs mt-1">{errors.telepon}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Alamat</label>
@@ -986,29 +1077,52 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Penerima <span className="text-rose-500">*</span></label>
                   <input 
                     type="text" 
-                    required 
                     value={formData.namaPenerima}
-                    onChange={e => setFormData({...formData, namaPenerima: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                    onChange={e => {
+                      setFormData({...formData, namaPenerima: e.target.value});
+                      if (errors.namaPenerima) setErrors({...errors, namaPenerima: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                      errors.namaPenerima 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {errors.namaPenerima && <p className="text-red-500 text-xs mt-1">{errors.namaPenerima}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email</label>
                   <input 
                     type="email" 
                     value={formData.emailPenerima}
-                    onChange={e => setFormData({...formData, emailPenerima: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                    onChange={e => {
+                      setFormData({...formData, emailPenerima: e.target.value});
+                      if (errors.emailPenerima) setErrors({...errors, emailPenerima: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                      errors.emailPenerima 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {errors.emailPenerima && <p className="text-red-500 text-xs mt-1">{errors.emailPenerima}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nomor Telepon</label>
                   <input 
-                    type="tel" 
+                    type="text" 
                     value={formData.teleponPenerima}
-                    onChange={e => setFormData({...formData, teleponPenerima: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                    onChange={e => {
+                      setFormData({...formData, teleponPenerima: e.target.value});
+                      if (errors.teleponPenerima) setErrors({...errors, teleponPenerima: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
+                      errors.teleponPenerima 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {errors.teleponPenerima && <p className="text-red-500 text-xs mt-1">{errors.teleponPenerima}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Alamat</label>
@@ -1033,10 +1147,16 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Pelabuhan Asal <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <select 
-                      required 
                       value={formData.asal}
-                      onChange={e => setFormData({...formData, asal: e.target.value})}
-                      className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none cursor-pointer"
+                      onChange={e => {
+                        setFormData({...formData, asal: e.target.value});
+                        if (errors.asal) setErrors({...errors, asal: ''});
+                      }}
+                      className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 appearance-none cursor-pointer ${
+                        errors.asal 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                          : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                      }`}
                     >
                       <option value="">-- Pilih Pelabuhan Asal --</option>
                       {ports.map(p => (
@@ -1047,15 +1167,22 @@ export default function PengelolaanPengirimanPage() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
+                  {errors.asal && <p className="text-red-500 text-xs mt-1">{errors.asal}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Pelabuhan Tujuan <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <select 
-                      required 
                       value={formData.tujuan}
-                      onChange={e => setFormData({...formData, tujuan: e.target.value})}
-                      className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 appearance-none cursor-pointer"
+                      onChange={e => {
+                        setFormData({...formData, tujuan: e.target.value});
+                        if (errors.tujuan) setErrors({...errors, tujuan: ''});
+                      }}
+                      className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 appearance-none cursor-pointer ${
+                        errors.tujuan 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                          : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                      }`}
                     >
                       <option value="">-- Pilih Pelabuhan Tujuan --</option>
                       {ports.map(p => (
@@ -1066,16 +1193,24 @@ export default function PengelolaanPengirimanPage() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
+                  {errors.tujuan && <p className="text-red-500 text-xs mt-1">{errors.tujuan}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Tanggal <span className="text-rose-500">*</span></label>
                   <input 
                     type="date" 
-                    required 
                     value={formData.tanggal}
-                    onChange={e => setFormData({...formData, tanggal: e.target.value})}
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 font-mono tracking-tight" 
+                    onChange={e => {
+                      setFormData({...formData, tanggal: e.target.value});
+                      if (errors.tanggal) setErrors({...errors, tanggal: ''});
+                    }}
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-400 focus:outline-none focus:ring-1 font-mono tracking-tight ${
+                      errors.tanggal 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {errors.tanggal && <p className="text-red-500 text-xs mt-1">{errors.tanggal}</p>}
                 </div>
               </div>
             </div>
@@ -1107,32 +1242,56 @@ export default function PengelolaanPengirimanPage() {
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Berat Barang (kg) *</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     value={itemForm.berat}
-                    onChange={e => setItemForm({...itemForm, berat: e.target.value})}
+                    onChange={e => {
+                      setItemForm({...itemForm, berat: e.target.value});
+                      if (itemErrors.berat) setItemErrors({...itemErrors, berat: ''});
+                    }}
                     placeholder="Berat dalam kg" 
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 font-mono tracking-tight ${
+                      itemErrors.berat 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {itemErrors.berat && <p className="text-red-500 text-xs mt-1">{itemErrors.berat}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Volume Barang (m³)</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     value={itemForm.volume}
-                    onChange={e => setItemForm({...itemForm, volume: e.target.value})}
+                    onChange={e => {
+                      setItemForm({...itemForm, volume: e.target.value});
+                      if (itemErrors.volume) setItemErrors({...itemErrors, volume: ''});
+                    }}
                     placeholder="Volume dalam m³" 
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 font-mono tracking-tight ${
+                      itemErrors.volume 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {itemErrors.volume && <p className="text-red-500 text-xs mt-1">{itemErrors.volume}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Deskripsi Kargo/Barang *</label>
                   <input 
                     type="text" 
                     value={itemForm.deskripsi}
-                    onChange={e => setItemForm({...itemForm, deskripsi: e.target.value})}
+                    onChange={e => {
+                      setItemForm({...itemForm, deskripsi: e.target.value});
+                      if (itemErrors.deskripsi) setItemErrors({...itemErrors, deskripsi: ''});
+                    }}
                     placeholder="Misal: Sparepart Mesin, Pipa Besi" 
-                    className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
+                    className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 font-mono tracking-tight ${
+                      itemErrors.deskripsi 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-white/5 focus:border-[#b06aee]/50 focus:ring-[#b06aee]/50'
+                    }`} 
                   />
+                  {itemErrors.deskripsi && <p className="text-red-500 text-xs mt-1">{itemErrors.deskripsi}</p>}
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Catatan Tambahan untuk Barang</label>
@@ -1341,7 +1500,10 @@ export default function PengelolaanPengirimanPage() {
                 
                 <button 
                   key={f.value}
-                  onClick={() => setFilter(f.value)}
+                  onClick={() => {
+                    setFilter(f.value);
+                    setCurrentPage(1);
+                  }}
                   className={`px-4 py-2 rounded-md text-[10px] tracking-wider font-bold transition-all ${
                     filter === f.value 
                       ? 'bg-[#b06aee] text-white shadow-[0_0_10px_rgba(176,106,238,0.4)]' 
@@ -1359,7 +1521,10 @@ export default function PengelolaanPengirimanPage() {
                 type="text"
                 placeholder="Cari Resi, Customer, Rute, Kargo..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full bg-[#151922] border border-white/5 rounded-md pl-10 pr-4 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 transition-all placeholder:text-gray-600"
               />
             </div>
@@ -1409,91 +1574,162 @@ export default function PengelolaanPengirimanPage() {
                 <p className="text-gray-500 text-sm font-mono">Tidak ada request ditemukan.</p>
               </div>
             ) : (
-              filteredRequests.map((req, idx) => (
-                <div key={idx} className="bg-[#151922] border border-white/5 rounded-lg p-6 hover:border-purple-500/30 transition-colors">
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-gray-200 font-bold tracking-wider text-sm font-mono">{req.id}</span>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-wider ${getStatusColor(req.status)}`}>
-                          {req.status}
-                        </span>
+              <>
+                {paginatedRequests.map((req, idx) => (
+                  <div key={idx} className="bg-[#151922] border border-white/5 rounded-lg p-6 hover:border-purple-500/30 transition-colors">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-gray-200 font-bold tracking-wider text-sm font-mono">{req.id}</span>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-wider ${getStatusColor(req.status)}`}>
+                            {req.status}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 text-[11px] font-mono">{req.type}</p>
                       </div>
-                      <p className="text-gray-400 text-[11px] font-mono">{req.type}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => handleViewDetails(req)}
-                        className="text-[#b06aee] text-[10px] font-bold tracking-wider hover:text-purple-300 transition-colors bg-white/5 px-2.5 py-1 rounded border border-white/5"
-                      >
-                        View Details
-                      </button>
-                      {req.status === 'Disetujui' && (
+                      <div className="flex items-center gap-3">
                         <button 
-                          onClick={() => handleKirim(req)}
-                          className="bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-colors shadow-[0_0_10px_rgba(14,165,233,0.1)]"
+                          onClick={() => handleViewDetails(req)}
+                          className="text-[#b06aee] text-[10px] font-bold tracking-wider hover:text-purple-300 transition-colors bg-white/5 px-2.5 py-1 rounded border border-white/5"
                         >
-                          Kirim
+                          View Details
                         </button>
-                      )}
-                      {req.status === 'Menunggu Persetujuan' && (
-                        <>
+                        {req.status === 'Disetujui' && (
                           <button 
-                            onClick={() => handleApprove(req)}
-                            className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-colors shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+                            onClick={() => handleKirim(req)}
+                            className="bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-colors shadow-[0_0_10px_rgba(14,165,233,0.1)]"
                           >
-                            Setujui
+                            Kirim
                           </button>
-                          <button 
-                            onClick={() => handleReject(req)}
-                            className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-colors shadow-[0_0_10px_rgba(244,63,94,0.1)]"
-                          >
-                            Tolak
-                          </button>
-                        </>
-                      )}
+                        )}
+                        {req.status === 'Menunggu Persetujuan' && (
+                          <>
+                            <button 
+                              onClick={() => handleApprove(req)}
+                              className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-colors shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+                            >
+                              Setujui
+                            </button>
+                            <button 
+                              onClick={() => handleReject(req)}
+                              className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-colors shadow-[0_0_10px_rgba(244,63,94,0.1)]"
+                            >
+                              Tolak
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5 text-gray-500">
-                        <UserIcon className="w-3.5 h-3.5" />
-                        <span className="text-[9px] font-mono uppercase tracking-wider">Customer</span>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5 text-gray-500">
+                          <UserIcon className="w-3.5 h-3.5" />
+                          <span className="text-[9px] font-mono uppercase tracking-wider">Customer</span>
+                        </div>
+                        <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.customer}</p>
                       </div>
-                      <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.customer}</p>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5 text-gray-500">
-                        <UserCircleIcon className="w-3.5 h-3.5 text-[#3b82f6]" />
-                        <span className="text-[9px] font-mono uppercase tracking-wider">Penerima</span>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5 text-gray-500">
+                          <UserCircleIcon className="w-3.5 h-3.5 text-[#3b82f6]" />
+                          <span className="text-[9px] font-mono uppercase tracking-wider">Penerima</span>
+                        </div>
+                        <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.penerima}</p>
                       </div>
-                      <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.penerima}</p>
-                    </div>
-                    <div className="md:col-span-1">
-                      <div className="flex items-center gap-2 mb-1.5 text-gray-500">
-                        <MapPinIcon className="w-3.5 h-3.5" />
-                        <span className="text-[9px] font-mono uppercase tracking-wider">Rute</span>
+                      <div className="md:col-span-1">
+                        <div className="flex items-center gap-2 mb-1.5 text-gray-500">
+                          <MapPinIcon className="w-3.5 h-3.5" />
+                          <span className="text-[9px] font-mono uppercase tracking-wider">Rute</span>
+                        </div>
+                        <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.route}</p>
                       </div>
-                      <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.route}</p>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5 text-gray-500">
-                        <CalendarIcon className="w-3.5 h-3.5" />
-                        <span className="text-[9px] font-mono uppercase tracking-wider">Tanggal</span>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5 text-gray-500">
+                          <CalendarIcon className="w-3.5 h-3.5" />
+                          <span className="text-[9px] font-mono uppercase tracking-wider">Tanggal</span>
+                        </div>
+                        <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.date}</p>
                       </div>
-                      <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.date}</p>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5 text-gray-500">
-                        <CubeIcon className="w-3.5 h-3.5" />
-                        <span className="text-[9px] font-mono uppercase tracking-wider">Cargo</span>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5 text-gray-500">
+                          <CubeIcon className="w-3.5 h-3.5" />
+                          <span className="text-[9px] font-mono uppercase tracking-wider">Cargo</span>
+                        </div>
+                        <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.cargo}</p>
                       </div>
-                      <p className="text-gray-200 text-xs font-mono font-medium pl-5">{req.cargo}</p>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+
+                {/* Pagination Controls */}
+                {filteredRequests.length > 0 && (
+                  <div className="bg-[#151922] border border-white/5 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-gray-400 font-mono mt-6">
+                    <div className="flex flex-wrap items-center gap-4 text-[10px]">
+                      <span>
+                        Menampilkan <span className="text-[#b06aee] font-bold">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredRequests.length)}</span> - <span className="text-[#b06aee] font-bold">{Math.min(currentPage * itemsPerPage, filteredRequests.length)}</span> dari <span className="text-white font-bold">{filteredRequests.length}</span> pengiriman
+                      </span>
+                      <div className="flex items-center gap-2 border-l border-white/5 pl-4">
+                        <span>Tampilkan:</span>
+                        <select
+                          value={itemsPerPage}
+                          onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                          }}
+                          className="bg-[#1b202c] border border-white/10 rounded px-2 py-0.5 text-[10px] text-gray-200 focus:outline-none focus:border-[#b06aee]/50 cursor-pointer"
+                        >
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-2 py-1 rounded bg-[#1b202c] border border-white/5 text-gray-300 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-[#1b202c] disabled:hover:text-gray-300 transition-colors text-[10px] font-medium"
+                      >
+                        Sebelumnya
+                      </button>
+                      
+                      {/* Page Numbers */}
+                      {generatePagination(currentPage, totalPages).map((page, index) => {
+                        if (page === '...') {
+                          return (
+                            <span key={`ellipsis-${index}`} className="px-1 text-gray-600 text-[10px]">
+                              ...
+                            </span>
+                          );
+                        }
+                        return (
+                          <button
+                            key={`page-${page}`}
+                            onClick={() => setCurrentPage(Number(page))}
+                            className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
+                              currentPage === page
+                                ? 'bg-[#b06aee] text-white font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)]'
+                                : 'bg-[#1b202c] border border-white/5 text-gray-300 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-2 py-1 rounded bg-[#1b202c] border border-white/5 text-gray-300 hover:text-white hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-[#1b202c] disabled:hover:text-gray-300 transition-colors text-[10px] font-medium"
+                      >
+                        Berikutnya
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

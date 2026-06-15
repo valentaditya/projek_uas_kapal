@@ -27,18 +27,16 @@ export default function LacakPaketPage() {
   const [loading, setLoading] = useState(false);
   const [shipment, setShipment] = useState<any>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [errors, setErrors] = useState<any>({});
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resiInput.trim()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Input Kosong',
-        text: 'Masukkan nomor resi terlebih dahulu!'
-      });
+      setErrors({ resi: 'Masukkan nomor resi terlebih dahulu!' });
       return;
     }
 
+    setErrors({});
     setLoading(true);
     setShipment(null);
     setHasSearched(true);
@@ -56,19 +54,11 @@ export default function LacakPaketPage() {
       if (data) {
         setShipment(data);
       } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Resi Tidak Ditemukan',
-          text: `Nomor resi ${resiInput} tidak terdaftar di sistem kami.`
-        });
+        setErrors({ resi: `Nomor resi ${resiInput} tidak terdaftar di sistem kami.` });
       }
     } catch (err: any) {
       console.error(err);
-      Swal.fire({
-        icon: 'error',
-        title: 'Terjadi Kesalahan',
-        text: err.message || 'Gagal melacak nomor resi.'
-      });
+      setErrors({ resi: err.message || 'Gagal melacak nomor resi.' });
     } finally {
       setLoading(false);
     }
@@ -101,24 +91,34 @@ export default function LacakPaketPage() {
           </p>
         </div>
         
-        <form onSubmit={handleTrack} className="bg-[#13161f] border border-white/5 rounded-lg p-8 mb-6">
+        <form noValidate onSubmit={handleTrack} className="bg-[#13161f] border border-white/5 rounded-lg p-8 mb-6">
           <h4 className="font-bold text-sm text-white mb-4">Masukkan Nomor Tracking / Resi</h4>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input 
-              type="text" 
-              value={resiInput}
-              onChange={(e) => setResiInput(e.target.value)}
-              placeholder="Contoh: AO-2026-110" 
-              className="flex-grow bg-[#0d1017] border border-white/5 rounded px-4 py-3 text-sm text-white focus:outline-none focus:border-[#d946ef]/50 transition-colors placeholder:text-gray-600 font-mono"
-            />
-            <button 
-              type="submit"
-              disabled={loading}
-              className="flex items-center justify-center gap-2 px-8 py-3 bg-[#a35de9] hover:bg-[#8643c7] disabled:opacity-50 transition-all rounded text-sm font-semibold text-white shadow-[0_0_15px_rgba(163,93,233,0.3)]"
-            >
-              <MagnifyingGlassIcon className="w-4 h-4" />
-              {loading ? 'Mencari...' : 'Lacak'}
-            </button>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <input 
+                type="text" 
+                value={resiInput}
+                onChange={(e) => {
+                  setResiInput(e.target.value);
+                  if (errors.resi) setErrors({...errors, resi: ''});
+                }}
+                placeholder="Contoh: AO-2026-110" 
+                className={`flex-grow bg-[#0d1017] border rounded px-4 py-3 text-sm text-white focus:outline-none transition-colors placeholder:text-gray-600 font-mono ${
+                  errors.resi 
+                    ? 'border-red-500 focus:border-red-500' 
+                    : 'border-white/5 focus:border-[#d946ef]/50'
+                }`}
+              />
+              <button 
+                type="submit"
+                disabled={loading}
+                className="flex items-center justify-center gap-2 px-8 py-3 bg-[#a35de9] hover:bg-[#8643c7] disabled:opacity-50 transition-all rounded text-sm font-semibold text-white shadow-[0_0_15px_rgba(163,93,233,0.3)]"
+              >
+                <MagnifyingGlassIcon className="w-4 h-4" />
+                {loading ? 'Mencari...' : 'Lacak'}
+              </button>
+            </div>
+            {errors.resi && <p className="text-red-500 text-xs">{errors.resi}</p>}
           </div>
         </form>
         
@@ -131,9 +131,7 @@ export default function LacakPaketPage() {
             <p className="text-xs text-gray-400 mb-2">
               Masukkan nomor resi yang valid pada kolom di atas untuk melihat status pengiriman.
             </p>
-            <p className="text-[11px] text-gray-600">
-              Nomor resi Anda berformat seperti: <code className="font-mono text-purple-400/80">AO-[Tahun]-[Kode]</code>
-            </p>
+            
           </div>
         ) : (
           <div className="space-y-6 animate-in fade-in duration-300">

@@ -30,6 +30,7 @@ export default function CekBiayaPage() {
   });
   const [useInsurance, setUseInsurance] = useState(false);
   const [calculation, setCalculation] = useState<any>(null);
+  const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
     const fetchPorts = async () => {
@@ -51,44 +52,50 @@ export default function CekBiayaPage() {
 
   const handleCalculate = (e: React.FormEvent) => {
     e.preventDefault();
+    const newErrors: any = {};
+
+    if (!formData.asal) {
+      newErrors.asal = 'Pelabuhan asal wajib dipilih';
+    }
+
+    if (!formData.tujuan) {
+      newErrors.tujuan = 'Pelabuhan tujuan wajib dipilih';
+    } else if (formData.asal && formData.asal === formData.tujuan) {
+      newErrors.tujuan = 'Pelabuhan asal dan tujuan tidak boleh sama';
+    }
+
+    if (!formData.berat) {
+      newErrors.berat = 'Berat barang wajib diisi';
+    } else if (!/^\d+(\.\d+)?$/.test(formData.berat)) {
+      newErrors.berat = 'Cuma bisa angka';
+    } else {
+      const beratVal = parseFloat(formData.berat);
+      if (beratVal <= 0) {
+        newErrors.berat = 'Berat barang harus lebih besar dari 0';
+      }
+    }
+
+    if (formData.volume) {
+      if (!/^\d+(\.\d+)?$/.test(formData.volume)) {
+        newErrors.volume = 'Cuma bisa angka';
+      } else {
+        const volumeVal = parseFloat(formData.volume);
+        if (volumeVal < 0) {
+          newErrors.volume = 'Volume barang tidak boleh negatif';
+        }
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setCalculation(null);
+      return;
+    }
+
+    setErrors({});
     
-    if (!formData.asal || !formData.tujuan) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Form Belum Lengkap',
-        text: 'Pilih pelabuhan asal dan tujuan terlebih dahulu!'
-      });
-      return;
-    }
-
-    if (formData.asal === formData.tujuan) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Rute Tidak Valid',
-        text: 'Pelabuhan asal dan tujuan tidak boleh sama!'
-      });
-      return;
-    }
-
     const beratVal = parseFloat(formData.berat);
-    if (isNaN(beratVal) || beratVal <= 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Input Tidak Valid',
-        text: 'Berat barang harus berupa angka lebih besar dari 0!'
-      });
-      return;
-    }
-
     const volumeVal = parseFloat(formData.volume) || 0;
-    if (volumeVal < 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Input Tidak Valid',
-        text: 'Volume barang tidak boleh negatif!'
-      });
-      return;
-    }
 
     const selectedType = CARGO_TYPES.find(c => c.value === formData.jenis) || CARGO_TYPES[4];
     
@@ -131,7 +138,7 @@ export default function CekBiayaPage() {
         
         <div className="grid lg:grid-cols-2 gap-8">
           
-          <form onSubmit={handleCalculate} className="bg-[#13161f] border border-white/5 rounded-lg p-8 space-y-5">
+          <form noValidate onSubmit={handleCalculate} className="bg-[#13161f] border border-white/5 rounded-lg p-8 space-y-5">
             <h4 className="font-bold text-[15px] text-white mb-6">Informasi Pengiriman</h4>
             
             <div>
@@ -141,20 +148,27 @@ export default function CekBiayaPage() {
               </label>
               <div className="relative">
                 <select 
-                  required 
                   value={formData.asal}
-                  onChange={e => setFormData({...formData, asal: e.target.value})}
-                  className="w-full bg-[#0d1017] border border-white/5 rounded px-4 py-3 text-sm text-white focus:outline-none focus:border-[#d946ef]/50 appearance-none cursor-pointer"
+                  onChange={e => {
+                    setFormData({...formData, asal: e.target.value});
+                    if (errors.asal) setErrors({...errors, asal: ''});
+                  }}
+                  className={`w-full bg-[#0d1017] border rounded px-4 py-3 text-sm text-white focus:outline-none appearance-none cursor-pointer ${
+                    errors.asal 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/5 focus:border-[#d946ef]/50'
+                  }`}
                 >
                   <option value="">-- Pilih Pelabuhan Asal --</option>
                   {ports.map(p => (
                     <option key={p.id} value={p.id}>{p.nama_pelabuhan}, {p.kota}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                {/* <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
+                </div> */}
               </div>
+              {errors.asal && <p className="text-red-500 text-xs mt-1">{errors.asal}</p>}
             </div>
 
             <div>
@@ -164,20 +178,27 @@ export default function CekBiayaPage() {
               </label>
               <div className="relative">
                 <select 
-                  required 
                   value={formData.tujuan}
-                  onChange={e => setFormData({...formData, tujuan: e.target.value})}
-                  className="w-full bg-[#0d1017] border border-white/5 rounded px-4 py-3 text-sm text-white focus:outline-none focus:border-[#d946ef]/50 appearance-none cursor-pointer"
+                  onChange={e => {
+                    setFormData({...formData, tujuan: e.target.value});
+                    if (errors.tujuan) setErrors({...errors, tujuan: ''});
+                  }}
+                  className={`w-full bg-[#0d1017] border rounded px-4 py-3 text-sm text-white focus:outline-none appearance-none cursor-pointer ${
+                    errors.tujuan 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/5 focus:border-[#d946ef]/50'
+                  }`}
                 >
                   <option value="">-- Pilih Pelabuhan Tujuan --</option>
                   {ports.map(p => (
                     <option key={p.id} value={p.id}>{p.nama_pelabuhan}, {p.kota}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                {/* <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
+                </div> */}
               </div>
+              {errors.tujuan && <p className="text-red-500 text-xs mt-1">{errors.tujuan}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -187,13 +208,20 @@ export default function CekBiayaPage() {
                   Berat Paket (kg) *
                 </label>
                 <input 
-                  type="number" 
-                  required
+                  type="text" 
                   value={formData.berat}
-                  onChange={e => setFormData({...formData, berat: e.target.value})}
+                  onChange={e => {
+                    setFormData({...formData, berat: e.target.value});
+                    if (errors.berat) setErrors({...errors, berat: ''});
+                  }}
                   placeholder="Contoh: 10"
-                  className="w-full bg-[#0d1017] border border-white/5 rounded px-4 py-3 text-sm text-white focus:outline-none focus:border-[#d946ef]/50 transition-colors placeholder:text-gray-600 font-mono"
+                  className={`w-full bg-[#0d1017] border rounded px-4 py-3 text-sm text-white focus:outline-none transition-colors placeholder:text-gray-600 font-mono ${
+                    errors.berat 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/5 focus:border-[#d946ef]/50'
+                  }`}
                 />
+                {errors.berat && <p className="text-red-500 text-xs mt-1">{errors.berat}</p>}
               </div>
 
               <div>
@@ -202,12 +230,20 @@ export default function CekBiayaPage() {
                   Volume Paket (m³)
                 </label>
                 <input 
-                  type="number" 
+                  type="text" 
                   value={formData.volume}
-                  onChange={e => setFormData({...formData, volume: e.target.value})}
+                  onChange={e => {
+                    setFormData({...formData, volume: e.target.value});
+                    if (errors.volume) setErrors({...errors, volume: ''});
+                  }}
                   placeholder="Contoh: 2"
-                  className="w-full bg-[#0d1017] border border-white/5 rounded px-4 py-3 text-sm text-white focus:outline-none focus:border-[#d946ef]/50 transition-colors placeholder:text-gray-600 font-mono"
+                  className={`w-full bg-[#0d1017] border rounded px-4 py-3 text-sm text-white focus:outline-none transition-colors placeholder:text-gray-600 font-mono ${
+                    errors.volume 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-white/5 focus:border-[#d946ef]/50'
+                  }`}
                 />
+                {errors.volume && <p className="text-red-500 text-xs mt-1">{errors.volume}</p>}
               </div>
             </div>
 
@@ -226,9 +262,9 @@ export default function CekBiayaPage() {
                     <option key={type.value} value={type.value}>{type.label}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                {/* <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -241,7 +277,7 @@ export default function CekBiayaPage() {
                   className="rounded bg-[#13161f] border-white/5 text-[#a35de9] focus:ring-offset-[#0d1017] focus:ring-[#a35de9]"
                 />
                 <span className="text-xs font-semibold text-gray-300 font-mono flex items-center gap-1.5">
-                  <ShieldCheckIcon className="w-4 h-4 text-[#a35de9]" /> Gunakan Asuransi Pengiriman (+0.5%)
+                  <ShieldCheckIcon className="w-4 h-4 text-[#a35de9]" /> Gunakan Asuransi Pengiriman
                 </span>
               </label>
             </div>

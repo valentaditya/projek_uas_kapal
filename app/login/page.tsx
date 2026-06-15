@@ -14,6 +14,10 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showRePassword, setShowRePassword] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ username: '', email: '', phone: '', password: '', repassword: '' });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [regErrors, setRegErrors] = useState<Record<string, string>>({});
 
   React.useEffect(() => {
     const getCookie = (name: string) => {
@@ -41,11 +45,24 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value;
-    const password = (e.currentTarget.elements.namedItem('password') as HTMLInputElement)?.value;
+    const newErrors: Record<string, string> = {};
+    if (!loginForm.email.trim()) {
+      newErrors.email = 'Email atau Username wajib diisi';
+    }
+    if (!loginForm.password.trim()) {
+      newErrors.password = 'Password wajib diisi';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    const { email, password } = loginForm;
 
     Swal.fire({
       title: 'Sedang memproses...',
+      theme: 'dark',
       allowOutsideClick: false,
       didOpen: () => {
         Swal.showLoading();
@@ -63,41 +80,20 @@ export default function LoginPage() {
       .maybeSingle();
 
     if (error || !userData) {
-      Swal.fire({
-        position: "center",
-        icon: "error",
-        title: "Login Gagal",
-        text: "Username/Email tidak terdaftar",
-        showConfirmButton: false,
-        timer: 2000,
-        theme: 'auto'
-      });
+      setErrors({ email: 'Username/Email tidak terdaftar' });
+      Swal.close();
       return;
     }
 
     if (userData.password !== password) {
-      Swal.fire({
-        position: "center",
-        icon: "error",
-        title: "Login Gagal",
-        text: "Password yang Anda masukkan salah",
-        showConfirmButton: false,
-        timer: 2000,
-        theme: 'auto'
-      });
+      setErrors({ password: 'Password yang Anda masukkan salah' });
+      Swal.close();
       return;
     }
 
     if (userData.status !== 'Aktif') {
-      Swal.fire({
-        position: "center",
-        icon: "error",
-        title: "Login Gagal",
-        text: "Status akun Anda tidak aktif",
-        showConfirmButton: false,
-        timer: 2000,
-        theme: 'auto'
-      });
+      setErrors({ email: 'Status akun Anda tidak aktif' });
+      Swal.close();
       return;
     }
 
@@ -130,24 +126,43 @@ export default function LoginPage() {
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    const username = (e.currentTarget.elements.namedItem('username_reg') as HTMLInputElement)?.value;
-    const email = (e.currentTarget.elements.namedItem('email_reg') as HTMLInputElement)?.value;
-    const phone = (e.currentTarget.elements.namedItem('reg_telepon') as HTMLInputElement)?.value;
-    const password = (e.currentTarget.elements.namedItem('password_reg') as HTMLInputElement)?.value;
-    const repassword = (e.currentTarget.elements.namedItem('repassword_reg') as HTMLInputElement)?.value;
+    const newRegErrors: Record<string, string> = {};
+    if (!registerForm.username.trim()) newRegErrors.username = 'Username wajib diisi';
+    
+    if (!registerForm.email.trim()) {
+      newRegErrors.email = 'Email wajib diisi';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.email)) {
+      newRegErrors.email = 'Format email tidak valid';
+    }
+    
+    if (!registerForm.phone.trim()) {
+      newRegErrors.phone = 'No Telepon wajib diisi';
+    } else if (!/^\+?[0-9]+$/.test(registerForm.phone)) {
+      newRegErrors.phone = 'Cuma bisa angka';
+    }
+    
+    if (!registerForm.password.trim()) {
+      newRegErrors.password = 'Password wajib diisi';
+    } else if (registerForm.password.length < 6) {
+      newRegErrors.password = 'Password minimal 6 karakter';
+    }
+    
+    if (!registerForm.repassword.trim()) {
+      newRegErrors.repassword = 'Konfirmasi Password wajib diisi';
+    } else if (registerForm.password !== registerForm.repassword) {
+      newRegErrors.repassword = 'Konfirmasi password tidak cocok';
+    }
 
-    if (password !== repassword) {
-      Swal.fire({
-        icon: "error",
-        title: "Password tidak sama",
-        text: "Pastikan password dan konfirmasi password sesuai",
-        theme: "auto"
-      });
+    if (Object.keys(newRegErrors).length > 0) {
+      setRegErrors(newRegErrors);
       return;
     }
 
+    const { username, email, phone, password } = registerForm;
+
     Swal.fire({
       title: 'Mendaftarkan...',
+      theme: 'dark',
       allowOutsideClick: false,
       didOpen: () => {
         Swal.showLoading();
@@ -168,18 +183,17 @@ export default function LoginPage() {
         icon: "error",
         title: "Gagal Mendaftar",
         text: "Terjadi kesalahan saat memeriksa akun: " + checkError.message,
-        theme: "auto"
+        theme: 'dark'
       });
       return;
     }
 
     if (existingUser && existingUser.length > 0) {
-      Swal.fire({
-        icon: "error",
-        title: "Gagal Mendaftar",
-        text: "Username atau Email sudah terdaftar",
-        theme: "auto"
+      setRegErrors({
+        username: 'Username atau Email sudah terdaftar',
+        email: 'Username atau Email sudah terdaftar'
       });
+      Swal.close();
       return;
     }
 
@@ -202,7 +216,7 @@ export default function LoginPage() {
         icon: "error",
         title: "Gagal Mendaftar",
         text: insertError.message,
-        theme: "auto"
+        theme: 'dark'
       });
       return;
     }
@@ -213,10 +227,10 @@ export default function LoginPage() {
       text: "Akun berhasil dibuat. Silakan login.",
       timer: 3000,
       showConfirmButton: false,
-      theme: "auto"
+      theme: 'dark'
     });
     
-    e.currentTarget.reset();
+    setRegisterForm({ username: '', email: '', phone: '', password: '', repassword: '' });
     setActiveTab('login');
   };
 
@@ -260,21 +274,29 @@ export default function LoginPage() {
           <div className="flex w-full bg-[#1a1c29]/80 rounded-lg p-1 mb-8 shadow-inner border border-white/5">
             <button 
               type="button" 
-              onClick={() => setActiveTab('login')}
+              onClick={() => {
+                setActiveTab('login');
+                setErrors({});
+                setRegErrors({});
+              }}
               className={`flex-1 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'login' ? 'bg-purple-500 text-white shadow-sm cursor-default' : 'text-gray-400 hover:text-white'}`}
             >
               Masuk
             </button>
             <button 
               type="button" 
-              onClick={() => setActiveTab('register')}
+              onClick={() => {
+                setActiveTab('register');
+                setErrors({});
+                setRegErrors({});
+              }}
               className={`flex-1 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'register' ? 'bg-purple-500 text-white shadow-sm cursor-default' : 'text-gray-400 hover:text-white'}`}
             >
               Buat Akun
             </button>
           </div>
           
-          <form key={activeTab} className="w-full" onSubmit={activeTab === 'login' ? handleLogin : handleRegister}>
+          <form key={activeTab} noValidate className="w-full" onSubmit={activeTab === 'login' ? handleLogin : handleRegister}>
             {activeTab === 'login' ? (
               <>
                 <div className="mb-5">
@@ -286,13 +308,20 @@ export default function LoginPage() {
                       <EnvelopeIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
                     </div>
                     <input 
-                      type="email" 
+                      type="text" 
                       id="email" 
-                      required
-                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-purple-500/50 rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(168,85,247,0.15)]"
-                      placeholder="contoh@email.com"
+                      value={loginForm.email}
+                      onChange={e => {
+                        setLoginForm({...loginForm, email: e.target.value});
+                        if (errors.email) setErrors({...errors, email: ''});
+                      }}
+                      className={`w-full bg-[#181625] border rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(168,85,247,0.15)] ${
+                        errors.email ? 'border-red-500' : 'border-[#2d2843] group-focus-within:border-purple-500/50'
+                      }`}
+                      placeholder="Masukan Email"
                     />
                   </div>
+                  {errors.email && <p className="text-red-500 text-xs mt-1 font-mono">{errors.email}</p>}
                 </div>
                 
                 <div className="mb-8">
@@ -307,8 +336,14 @@ export default function LoginPage() {
                     <input 
                       type={showRePassword ? "text" : "password"}
                       id="password"
-                      required 
-                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-10 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      value={loginForm.password}
+                      onChange={e => {
+                        setLoginForm({...loginForm, password: e.target.value});
+                        if (errors.password) setErrors({...errors, password: ''});
+                      }}
+                      className={`w-full bg-[#181625] border rounded-md py-3.5 pr-10 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] ${
+                        errors.password ? 'border-red-500' : 'border-[#2d2843] group-focus-within:border-cyan-500/50'
+                      }`}
                       placeholder="Masukan Password"
                     />
                   
@@ -323,6 +358,7 @@ export default function LoginPage() {
                       )}
                     </div>
                   </div>
+                  {errors.password && <p className="text-red-500 text-xs mt-1 font-mono">{errors.password}</p>}
                 </div>
                 
                 <button 
@@ -348,11 +384,18 @@ export default function LoginPage() {
                     <input 
                       type="text" 
                       id="username_reg" 
-                      required
-                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-purple-500/50 rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                      value={registerForm.username}
+                      onChange={e => {
+                        setRegisterForm({...registerForm, username: e.target.value});
+                        if (regErrors.username) setRegErrors({...regErrors, username: ''});
+                      }}
+                      className={`w-full bg-[#181625] border rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(168,85,247,0.15)] ${
+                        regErrors.username ? 'border-red-500' : 'border-[#2d2843] group-focus-within:border-purple-500/50'
+                      }`}
                       placeholder="Pilih username"
                     />
                   </div>
+                  {regErrors.username && <p className="text-red-500 text-xs mt-1 font-mono">{regErrors.username}</p>}
                 </div>
 
                 <div className="mb-5">
@@ -364,13 +407,20 @@ export default function LoginPage() {
                       <EnvelopeIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
                     </div>
                     <input 
-                      type="email" 
+                      type="text" 
                       id="email_reg"
-                      required 
-                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      value={registerForm.email}
+                      onChange={e => {
+                        setRegisterForm({...registerForm, email: e.target.value});
+                        if (regErrors.email) setRegErrors({...regErrors, email: ''});
+                      }}
+                      className={`w-full bg-[#181625] border rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] ${
+                        regErrors.email ? 'border-red-500' : 'border-[#2d2843] group-focus-within:border-cyan-500/50'
+                      }`}
                       placeholder="email@example.com"
                     />
                   </div>
+                  {regErrors.email && <p className="text-red-500 text-xs mt-1 font-mono">{regErrors.email}</p>}
                 </div>
                 
                 <div className="mb-5">
@@ -382,13 +432,20 @@ export default function LoginPage() {
                       <PhoneIcon className="h-5 w-5 text-gray-500 group-focus-within:text-purple-500 transition-colors" />
                     </div>
                     <input 
-                      type="number" 
+                      type="text" 
                       id="reg_telepon"
-                      required 
-                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      value={registerForm.phone}
+                      onChange={e => {
+                        setRegisterForm({...registerForm, phone: e.target.value});
+                        if (regErrors.phone) setRegErrors({...regErrors, phone: ''});
+                      }}
+                      className={`w-full bg-[#181625] border rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] ${
+                        regErrors.phone ? 'border-red-500' : 'border-[#2d2843] group-focus-within:border-cyan-500/50'
+                      }`}
                       placeholder="+62 812-3456-7890"
                     />
                   </div>
+                  {regErrors.phone && <p className="text-red-500 text-xs mt-1 font-mono">{regErrors.phone}</p>}
                 </div>
 
                 <div className="mb-5">
@@ -403,8 +460,14 @@ export default function LoginPage() {
                     <input 
                       type={showPassword ? "text" : "password"}
                       id="password_reg"
-                      required 
-                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-10 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      value={registerForm.password}
+                      onChange={e => {
+                        setRegisterForm({...registerForm, password: e.target.value});
+                        if (regErrors.password) setRegErrors({...regErrors, password: ''});
+                      }}
+                      className={`w-full bg-[#181625] border rounded-md py-3.5 pr-10 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] ${
+                        regErrors.password ? 'border-red-500' : 'border-[#2d2843] group-focus-within:border-cyan-500/50'
+                      }`}
                       placeholder="Minimal 6 Karakter"
                     />
 
@@ -419,6 +482,7 @@ export default function LoginPage() {
                       )}
                     </div>
                   </div>
+                  {regErrors.password && <p className="text-red-500 text-xs mt-1 font-mono">{regErrors.password}</p>}
                 </div>
 
                 <div className="mb-8">
@@ -433,8 +497,14 @@ export default function LoginPage() {
                     <input 
                       type={showRePassword ? "text" : "password"}
                       id="repassword_reg"
-                      required 
-                      className="w-full bg-[#181625] border border-[#2d2843] group-focus-within:border-cyan-500/50 rounded-md py-3.5 pr-10 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)]"
+                      value={registerForm.repassword}
+                      onChange={e => {
+                        setRegisterForm({...registerForm, repassword: e.target.value});
+                        if (regErrors.repassword) setRegErrors({...regErrors, repassword: ''});
+                      }}
+                      className={`w-full bg-[#181625] border rounded-md py-3.5 pr-10 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] ${
+                        regErrors.repassword ? 'border-red-500' : 'border-[#2d2843] group-focus-within:border-cyan-500/50'
+                      }`}
                       placeholder="Ulangi password"
                     />
                   
@@ -449,6 +519,7 @@ export default function LoginPage() {
                       )}
                     </div>
                   </div>
+                  {regErrors.repassword && <p className="text-red-500 text-xs mt-1 font-mono">{regErrors.repassword}</p>}
                 </div>
 
                 <button 
