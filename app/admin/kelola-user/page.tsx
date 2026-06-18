@@ -295,7 +295,7 @@ export default function KelolaUserPage() {
                 <th className="px-6 py-4 font-bold">User</th>
                 <th className="px-6 py-4 font-bold">Kontak</th>
                 <th className="px-6 py-4 font-bold">Perusahaan</th>
-                <th className="px-6 py-4 font-bold">Role</th>
+                <th className="px-6 py-4 font-bold">Peran</th>
                 <th className="px-6 py-4 font-bold">Status</th>
                 <th className="px-6 py-4 font-bold text-right">Aksi</th>
               </tr>
