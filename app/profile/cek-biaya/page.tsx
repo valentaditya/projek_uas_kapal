@@ -89,6 +89,12 @@ export default function CekBiayaPage() {
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setCalculation(null);
+      const firstErrorField = Object.keys(newErrors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -148,6 +154,7 @@ export default function CekBiayaPage() {
               </label>
               <div className="relative">
                 <select 
+                  id="asal"
                   value={formData.asal}
                   onChange={e => {
                     setFormData({...formData, asal: e.target.value});
@@ -178,6 +185,7 @@ export default function CekBiayaPage() {
               </label>
               <div className="relative">
                 <select 
+                  id="tujuan"
                   value={formData.tujuan}
                   onChange={e => {
                     setFormData({...formData, tujuan: e.target.value});
@@ -209,6 +217,7 @@ export default function CekBiayaPage() {
                 </label>
                 <input 
                   type="text" 
+                  id="berat"
                   value={formData.berat}
                   onChange={e => {
                     setFormData({...formData, berat: e.target.value});
@@ -231,6 +240,7 @@ export default function CekBiayaPage() {
                 </label>
                 <input 
                   type="text" 
+                  id="volume"
                   value={formData.volume}
                   onChange={e => {
                     setFormData({...formData, volume: e.target.value});

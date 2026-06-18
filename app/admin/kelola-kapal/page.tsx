@@ -93,6 +93,15 @@ export default function KelolaKapalPage() {
     fetchKapal();
   }, [supabase]);
 
+  const getIndonesianStatus = (status: string) => {
+    const s = (status || '').toLowerCase();
+    if (s.includes('route') || s.includes('berlayar')) return 'Sedang Berlayar';
+    if (s.includes('port') || s.includes('pelabuhan')) return 'Di Pelabuhan';
+    if (s.includes('delay') || s.includes('tunda')) return 'Tertunda';
+    if (s.includes('maintenance') || s.includes('pelihara') || s.includes('perbaikan')) return 'Pemeliharaan';
+    return status;
+  };
+
   const filteredShips = ships.filter(ship => 
     (ship.name || '').toLowerCase().includes(search.toLowerCase()) || 
     (ship.kapten || '').toLowerCase().includes(search.toLowerCase())
@@ -145,6 +154,12 @@ export default function KelolaKapalPage() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstErrorField = Object.keys(newErrors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -370,7 +385,7 @@ export default function KelolaKapalPage() {
 
               <div className="mt-6 flex justify-between items-center">
                 <div className={`px-2 py-1 rounded text-[10px] font-semibold flex-shrink-0 ${ship.statusBg} ${ship.statusColor}`}>
-                  {ship.status}
+                  {getIndonesianStatus(ship.status)}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => openEditModal(ship)} className="p-1.5 text-gray-400 hover:text-[#b06aee] transition-colors rounded hover:bg-white/5">
@@ -401,6 +416,7 @@ export default function KelolaKapalPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Kapal *</label>
                   <input 
                     type="text" 
+                    id="name"
                     value={formData.name} onChange={e => {
                       setFormData({...formData, name: e.target.value});
                       if (errors.name) setErrors({...errors, name: ''});
@@ -417,6 +433,7 @@ export default function KelolaKapalPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Tipe Kapal *</label>
                   <input 
                     type="text" 
+                    id="type"
                     value={formData.type} onChange={e => {
                       setFormData({...formData, type: e.target.value});
                       if (errors.type) setErrors({...errors, type: ''});
@@ -435,6 +452,7 @@ export default function KelolaKapalPage() {
                   <input 
                     type="text" 
                     placeholder="Kapten..."
+                    id="kapten"
                     value={formData.kapten} onChange={e => {
                       setFormData({...formData, kapten: e.target.value});
                       if (errors.kapten) setErrors({...errors, kapten: ''});
@@ -452,6 +470,7 @@ export default function KelolaKapalPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Tujuan *</label>
                   <input 
                     type="text" 
+                    id="tujuan"
                     value={formData.tujuan} onChange={e => {
                       setFormData({...formData, tujuan: e.target.value});
                       if (errors.tujuan) setErrors({...errors, tujuan: ''});
@@ -468,6 +487,7 @@ export default function KelolaKapalPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Region *</label>
                   <input 
                     type="text" 
+                    id="region"
                     value={formData.region} onChange={e => {
                       setFormData({...formData, region: e.target.value});
                       if (errors.region) setErrors({...errors, region: ''});
@@ -485,6 +505,7 @@ export default function KelolaKapalPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Status *</label>
                   <div className="relative">
                     <select 
+                      id="status"
                       value={formData.status} 
                       onChange={e => {
                         setFormData({...formData, status: e.target.value});
@@ -497,10 +518,10 @@ export default function KelolaKapalPage() {
                       }`}
                     >
                       <option value="" disabled>Pilih Status</option>
-                      <option value="En Route">En Route</option>
-                      <option value="In Port">In Port</option>
-                      <option value="Delayed">Delayed</option>
-                      <option value="Maintenance">Maintenance</option>
+                      <option value="En Route">Sedang Berlayar</option>
+                      <option value="In Port">Di Pelabuhan</option>
+                      <option value="Delayed">Tertunda</option>
+                      <option value="Maintenance">Pemeliharaan</option>
                     </select>
                     
                   </div>
@@ -510,6 +531,7 @@ export default function KelolaKapalPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Fuel (%) *</label>
                   <input 
                     type="text" 
+                    id="fuel"
                     value={formData.fuel} onChange={e => {
                       setFormData({...formData, fuel: e.target.value});
                       if (errors.fuel) setErrors({...errors, fuel: ''});

@@ -74,17 +74,25 @@ export default function DashboardPage() {
     return () => clearInterval(intervalId);
   }, [supabase]);
 
+  const getIndonesianStatus = (status: string) => {
+    const s = (status || '').toLowerCase();
+    if (s.includes('route') || s.includes('berlayar')) return 'Sedang Berlayar';
+    if (s.includes('port') || s.includes('pelabuhan')) return 'Di Pelabuhan';
+    if (s.includes('delay') || s.includes('tunda')) return 'Tertunda';
+    if (s.includes('maintenance') || s.includes('pelihara') || s.includes('perbaikan')) return 'Pemeliharaan';
+    return status;
+  };
+
   const totalKapal = shipsData.length;
-  const countEnRoute = shipsData.filter(s => s.status_kapal === 'En Route').length;
-  const countInPort = shipsData.filter(s => s.status_kapal === 'In Port').length;
-  const countDelayed = shipsData.filter(s => s.status_kapal === 'Delayed').length;
-  const countMaintenance = shipsData.filter(s => s.status_kapal === 'Maintenance').length;
+  const countEnRoute = shipsData.filter(s => s.status_kapal === 'En Route' || s.status_kapal === 'Sedang Berlayar').length;
+  const countInPort = shipsData.filter(s => s.status_kapal === 'In Port' || s.status_kapal === 'Di Pelabuhan').length;
+  const countDelayed = shipsData.filter(s => s.status_kapal === 'Delayed' || s.status_kapal === 'Tertunda').length;
+  const countMaintenance = shipsData.filter(s => s.status_kapal === 'Maintenance' || s.status_kapal === 'Pemeliharaan').length;
 
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
       <div className="mb-8">
         <h2 className="text-2xl font-bold tracking-wider text-white mb-2">Ringkasan Armada</h2>
-        
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
@@ -104,7 +112,7 @@ export default function DashboardPage() {
         
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">EN ROUTE</p>
+            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">SEDANG BERLAYAR</p>
             {loading ? (
               <div className="h-9 w-12 bg-white/5 animate-pulse rounded mt-1" />
             ) : (
@@ -118,7 +126,7 @@ export default function DashboardPage() {
 
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">IN PORT</p>
+            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">DI PELABUHAN</p>
             {loading ? (
               <div className="h-9 w-12 bg-white/5 animate-pulse rounded mt-1" />
             ) : (
@@ -132,7 +140,7 @@ export default function DashboardPage() {
 
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">DELAYED</p>
+            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">TERTUNDA</p>
             {loading ? (
               <div className="h-9 w-12 bg-white/5 animate-pulse rounded mt-1" />
             ) : (
@@ -146,7 +154,7 @@ export default function DashboardPage() {
 
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">MAINTENANCE</p>
+            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">PEMELIHARAAN</p>
             {loading ? (
               <div className="h-9 w-12 bg-white/5 animate-pulse rounded mt-1" />
             ) : (
@@ -204,7 +212,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className={`px-2 py-1 rounded text-[10px] font-semibold flex-shrink-0 ${ship.statusBg} ${ship.statusColor}`}>
-                  {ship.status_kapal}
+                  {getIndonesianStatus(ship.status_kapal)}
                 </div>
               </div>
 

@@ -13,10 +13,10 @@ export function StatusDistribusiChart({ ships }: { ships: any[] }) {
   }, {} as Record<string, number>);
 
   const data = [
-    { name: 'En Route', value: statusCounts['En Route'] || 0, fill: '#3b82f6' },
-    { name: 'In Port', value: statusCounts['In Port'] || 0, fill: '#06b6d4' },
-    { name: 'Delayed', value: statusCounts['Delayed'] || 0, fill: '#eab308' },
-    { name: 'Maintenance', value: statusCounts['Maintenance'] || 0, fill: '#f43f5e' },
+    { name: 'Sedang Berlayar', value: (statusCounts['En Route'] || 0) + (statusCounts['Sedang Berlayar'] || 0), fill: '#3b82f6' },
+    { name: 'Di Pelabuhan', value: (statusCounts['In Port'] || 0) + (statusCounts['Di Pelabuhan'] || 0), fill: '#06b6d4' },
+    { name: 'Tertunda', value: (statusCounts['Delayed'] || 0) + (statusCounts['Tertunda'] || 0), fill: '#eab308' },
+    { name: 'Pemeliharaan', value: (statusCounts['Maintenance'] || 0) + (statusCounts['Pemeliharaan'] || 0), fill: '#f43f5e' },
   ].filter(item => item.value > 0);
 
   return (

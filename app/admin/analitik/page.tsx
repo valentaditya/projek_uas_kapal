@@ -44,16 +44,28 @@ export default function AnalitikPage() {
       const { data, error } = await // cara ambil data di db
  supabase.from('kapal').select('*');
       if (data && !error) {
-        const mapped = data.map((ship: any) => ({
-          name: ship.nama_kapal,
-          type: ship.tipe_kapal,
-          status: ship.status_kapal || 'En Route',
-          kapten: ship.nama_kapten,
-          tujuan: ship.tujuan_kapal,
-          kecepatan: ship.status_kapal === 'En Route' ? (15 + Math.random() * 5).toFixed(1) : '0',
-          fuel: ship.fuel_kapal,
-          region: ship.region_kapal
-        }));
+        const getIndonesianStatus = (status: string) => {
+          const s = (status || '').toLowerCase();
+          if (s.includes('route') || s.includes('berlayar')) return 'Sedang Berlayar';
+          if (s.includes('port') || s.includes('pelabuhan')) return 'Di Pelabuhan';
+          if (s.includes('delay') || s.includes('tunda')) return 'Tertunda';
+          if (s.includes('maintenance') || s.includes('pelihara') || s.includes('perbaikan')) return 'Pemeliharaan';
+          return status;
+        };
+        const mapped = data.map((ship: any) => {
+          const rawStatus = ship.status_kapal || 'En Route';
+          const isBerlayar = rawStatus.toLowerCase().includes('route') || rawStatus.toLowerCase().includes('berlayar');
+          return {
+            name: ship.nama_kapal,
+            type: ship.tipe_kapal,
+            status: getIndonesianStatus(rawStatus),
+            kapten: ship.nama_kapten,
+            tujuan: ship.tujuan_kapal,
+            kecepatan: isBerlayar ? (15 + Math.random() * 5).toFixed(1) : '0',
+            fuel: ship.fuel_kapal,
+            region: ship.region_kapal
+          };
+        });
         setShipsData(mapped);
       }
     } catch (err) {
@@ -68,10 +80,10 @@ export default function AnalitikPage() {
   }, []);
 
   const totalKapal = shipsData.length;
-  const countEnRoute = shipsData.filter(s => s.status === 'En Route').length;
-  const countInPort = shipsData.filter(s => s.status === 'In Port').length;
-  const countDelayed = shipsData.filter(s => s.status === 'Delayed').length;
-  const countMaintenance = shipsData.filter(s => s.status === 'Maintenance').length;
+  const countEnRoute = shipsData.filter(s => s.status === 'En Route' || s.status === 'Sedang Berlayar').length;
+  const countInPort = shipsData.filter(s => s.status === 'In Port' || s.status === 'Di Pelabuhan').length;
+  const countDelayed = shipsData.filter(s => s.status === 'Delayed' || s.status === 'Tertunda').length;
+  const countMaintenance = shipsData.filter(s => s.status === 'Maintenance' || s.status === 'Pemeliharaan').length;
 
   return (
     <main className="mx-auto px-6 py-10 relative z-10 w-full max-w-[1500px]">
@@ -97,7 +109,7 @@ export default function AnalitikPage() {
         
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between shadow-lg">
           <div>
-            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">EN ROUTE</p>
+            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">SEDANG BERLAYAR</p>
             {loading ? (
               <div className="h-9 w-14 bg-white/5 animate-pulse rounded mt-1" />
             ) : (
@@ -111,7 +123,7 @@ export default function AnalitikPage() {
 
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between shadow-lg">
           <div>
-            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">IN PORT</p>
+            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">DI PELABUHAN</p>
             {loading ? (
               <div className="h-9 w-14 bg-white/5 animate-pulse rounded mt-1" />
             ) : (
@@ -125,7 +137,7 @@ export default function AnalitikPage() {
 
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between shadow-lg">
           <div>
-            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">DELAYED</p>
+            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">TERTUNDA</p>
             {loading ? (
               <div className="h-9 w-14 bg-white/5 animate-pulse rounded mt-1" />
             ) : (
@@ -139,7 +151,7 @@ export default function AnalitikPage() {
 
         <div className="bg-[#151922] border border-white/5 rounded-[10px] p-5 flex items-center justify-between shadow-lg">
           <div>
-            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">MAINTENANCE</p>
+            <p className="text-[11px] text-gray-500 tracking-widest mb-1 font-semibold uppercase">PEMELIHARAAN</p>
             {loading ? (
               <div className="h-9 w-14 bg-white/5 animate-pulse rounded mt-1" />
             ) : (

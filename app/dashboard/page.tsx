@@ -279,7 +279,7 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              <div className="bg-[#0e1017]/50 rounded p-4 border border-white/5 mb-4 grid grid-cols-2 gap-4">
+              <div className="bg-[#0e1017]/50 rounded p-4 border border-white/5 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <div>
                     <p className="text-[10px] text-gray-500 mb-1">Pengirim</p>
                     <p className="text-xs text-gray-300 font-semibold">{item.pengirim}</p>

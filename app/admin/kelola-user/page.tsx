@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { createClient } from '@/utils/supabase/client';
 import { generatePagination } from '@/app/lib/utils';
+import Swal from 'sweetalert2';
 
 export default function KelolaUserPage() {
   // cara connect db
@@ -107,7 +108,12 @@ export default function KelolaUserPage() {
     if (!formData.phone.trim()) {
       newErrors.phone = 'No. Telepon wajib diisi';
     } else if (!/^\+?[0-9]+$/.test(formData.phone)) {
-      newErrors.phone = 'Cuma bisa angka';
+      newErrors.phone = 'Hanya boleh berisi angka';
+    } else {
+      const digits = formData.phone.trim().replace(/\+/g, '');
+      if (digits.length < 8 || digits.length > 12) {
+        newErrors.phone = 'No. Telepon harus minimal 8 dan maksimal 12 digit';
+      }
     }
     
     if (!formData.role) newErrors.role = 'Role wajib dipilih';
@@ -115,6 +121,11 @@ export default function KelolaUserPage() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstErrorField = Object.keys(newErrors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+      }
       return;
     }
     
@@ -138,12 +149,28 @@ export default function KelolaUserPage() {
       const { error } = await // cara perbarui data di db
  supabase.from('user').update(payload).eq('id', editingUser.id);
       if (!error) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: 'Data user berhasil diperbarui.',
+          background: '#151922',
+          color: '#ffffff',
+          showConfirmButton: false,
+          timer: 1500
+        });
         fetchUsers();
         setIsModalOpen(false);
         setEditingUser(null);
         setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '', password: '' });
       } else {
-        alert("Gagal memperbarui user: " + error.message);
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal!',
+          text: "Gagal memperbarui user: " + error.message,
+          background: '#151922',
+          color: '#ffffff',
+          confirmButtonColor: '#a855f7'
+        });
       }
     } else {
 
@@ -151,23 +178,79 @@ export default function KelolaUserPage() {
       const { error } = await // cara memasukkan data ke db
  supabase.from('user').insert([payload]);
       if (!error) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: 'User baru berhasil ditambahkan.',
+          background: '#151922',
+          color: '#ffffff',
+          showConfirmButton: false,
+          timer: 1500
+        });
         fetchUsers();
         setIsModalOpen(false);
         setFormData({ username: '', name: '', email: '', phone: '', role: '', status: '', company: '', location: '', password: '' });
       } else {
-        alert("Gagal menambahkan user: " + error.message);
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal!',
+          text: "Gagal menambahkan user: " + error.message,
+          background: '#151922',
+          color: '#ffffff',
+          confirmButtonColor: '#a855f7'
+        });
       }
     }
   };
 
   const deleteUser = async (id: number) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus user ini?')) {
+    const result = await Swal.fire({
+      title: 'Apakah Anda yakin?',
+      text: 'Apakah Anda yakin ingin menghapus user ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#374151',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      background: '#151922',
+      color: '#ffffff'
+    });
+
+    if (result.isConfirmed) {
+      Swal.fire({
+        title: 'Menghapus User...',
+        allowOutsideClick: false,
+        background: '#151922',
+        color: '#ffffff',
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
       const { error } = await // cara hapus data di db
  supabase.from('user').delete().eq('id', id);
+
       if (!error) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Dihapus!',
+          text: 'Data user berhasil dihapus.',
+          background: '#151922',
+          color: '#ffffff',
+          showConfirmButton: false,
+          timer: 1500
+        });
         fetchUsers();
       } else {
-        alert("Gagal menghapus user: " + error.message);
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal!',
+          text: "Gagal menghapus user: " + error.message,
+          background: '#151922',
+          color: '#ffffff',
+          confirmButtonColor: '#a855f7'
+        });
       }
     }
   };
@@ -406,6 +489,7 @@ export default function KelolaUserPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Username *</label>
                   <input 
                     type="text" 
+                    id="username"
                     value={formData.username} 
                     onChange={e => {
                       const newUsername = e.target.value;
@@ -430,6 +514,7 @@ export default function KelolaUserPage() {
                   </label>
                   <input 
                     type="text" 
+                    id="password"
                     value={formData.password} 
                     onChange={e => {
                       setFormData({...formData, password: e.target.value});
@@ -448,6 +533,7 @@ export default function KelolaUserPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Lengkap *</label>
                   <input 
                     type="text" 
+                    id="name"
                     value={formData.name} onChange={e => {
                       setFormData({...formData, name: e.target.value});
                       if (errors.name) setErrors(prev => ({ ...prev, name: '' }));
@@ -465,6 +551,7 @@ export default function KelolaUserPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email *</label>
                   <input 
                     type="email" 
+                    id="email"
                     value={formData.email} onChange={e => {
                       setFormData({...formData, email: e.target.value});
                       if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
@@ -481,10 +568,12 @@ export default function KelolaUserPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">No. Telepon *</label>
                   <input 
                     type="text" 
+                    id="phone"
                     value={formData.phone} onChange={e => {
                       setFormData({...formData, phone: e.target.value});
                       if (errors.phone) setErrors(prev => ({ ...prev, phone: '' }));
                     }}
+                    placeholder="Contoh: 08123456789 (8-12 digit)"
                     className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 ${
                       errors.phone 
                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
@@ -498,6 +587,7 @@ export default function KelolaUserPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Role *</label>
                   <div className="relative">
                     <select 
+                      id="role"
                       value={formData.role} 
                       onChange={e => {
                         setFormData({...formData, role: e.target.value});
@@ -523,6 +613,7 @@ export default function KelolaUserPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Status *</label>
                   <div className="relative">
                     <select 
+                      id="status"
                       value={formData.status} 
                       onChange={e => {
                         setFormData({...formData, status: e.target.value});
@@ -559,6 +650,7 @@ export default function KelolaUserPage() {
                   <input 
                     type="text" 
                     value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})}
+                    placeholder="Contoh: Jl. Merdeka No. 123, Jakarta"
                     className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50"
                   />
                 </div>

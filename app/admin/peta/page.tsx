@@ -14,7 +14,7 @@ import { createClient } from '@/utils/supabase/client';
 
 const PetaMap = dynamic(() => import('./PetaMap'), {
   ssr: false,
-  loading: () => <div className="absolute inset-0 w-full h-full bg-[#0a0d14] flex items-center justify-center animate-pulse"><span className="text-gray-500 font-mono text-sm">Loading Map...</span></div>
+  loading: () => <div className="absolute inset-0 w-full h-full bg-[#0a0d14] flex items-center justify-center animate-pulse"><span className="text-gray-500 font-mono text-sm">Memuat Peta...</span></div>
 });
 
 const PORT_COORDINATES: Record<string, [number, number]> = {
@@ -137,9 +137,9 @@ export default function PetaGlobalPage() {
 
       <div className="bg-[#10131a] border border-white/5 rounded-t-[10px] p-0 relative shadow-lg overflow-hidden flex flex-col h-[500px]">
         <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-10 pointer-events-none">
-          <h3 className="text-xs font-bold text-gray-300 tracking-widest uppercase bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10">GLOBAL FLEET MAP</h3>
+          <h3 className="text-xs font-bold text-gray-300 tracking-widest uppercase bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10">PETA ARMADA GLOBAL</h3>
           <p className="text-[10px] text-gray-400 font-mono flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10">
-            <MapIcon className="w-4 h-4" /> {routes.length} routes active
+            <MapIcon className="w-4 h-4" /> {routes.length} rute aktif
           </p>
         </div>
 
@@ -180,7 +180,7 @@ export default function PetaGlobalPage() {
           <div className="mb-6 flex justify-between items-start">
             <div>
               <h2 className="text-gray-200 font-bold tracking-wider text-base">{selectedRoute.name}</h2>
-              <p className="text-[#3b82f6] text-[10px] font-bold tracking-widest uppercase mt-1">Route ID: {selectedRoute.routeId} • EN ROUTE</p>
+              <p className="text-[#3b82f6] text-[10px] font-bold tracking-widest uppercase mt-1">Route ID: {selectedRoute.routeId} • SEDANG BERLAYAR</p>
             </div>
             <div className="text-right">
               <span className="text-xs text-gray-400 font-mono">Kecepatan: <strong>{selectedRoute.kecepatan} kn</strong></span>

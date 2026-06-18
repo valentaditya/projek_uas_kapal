@@ -508,6 +508,67 @@ export default function PengelolaanPengirimanPage() {
     }
   };
 
+  const handleSelesai = async (req: any) => {
+    const confirmResult = await Swal.fire({
+      title: 'Konfirmasi Selesai',
+      text: `Apakah Anda yakin pengiriman dengan Resi ${req.id} telah sampai/selesai?`,
+      icon: 'question',
+      background: '#151922',
+      color: '#ffffff',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#374151',
+      confirmButtonText: 'Ya, Selesai',
+      cancelButtonText: 'Batal',
+      theme: 'dark'
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    Swal.fire({
+      title: 'Memproses...',
+      allowOutsideClick: false,
+      theme: 'dark',
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    try {
+      const { error } = await // cara perbarui data di db
+ supabase.from('pengiriman').update({ status: 'Terkirim' })
+        .eq('id', req.dbId);
+
+      if (error) throw error;
+
+      // Insert notification
+      await supabase.from('notifikasi').insert([{
+        title: 'Pengiriman Selesai',
+        message: `Pengiriman dengan Resi ${req.id} telah selesai & terkirim ke tujuan.`,
+        icon: 'CheckIcon',
+        icon_color: 'text-green-500'
+      }]);
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: `Pengiriman dengan Resi ${req.id} statusnya diubah menjadi Terkirim.`,
+        confirmButtonColor: '#10b981',
+        theme: 'dark'
+      });
+
+      fetchRequests();
+    } catch (err: any) {
+      console.error(err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        theme: 'dark',
+        text: err.message || 'Terjadi kesalahan saat menyelesaikan pengiriman.'
+      });
+    }
+  };
+
 
 
   const handleCustomerChange = (idStr: string) => {
@@ -556,6 +617,12 @@ export default function PengelolaanPengirimanPage() {
 
     if (Object.keys(newItemErrors).length > 0) {
       setItemErrors(newItemErrors);
+      const firstErrorField = Object.keys(newItemErrors)[0];
+      const element = document.getElementById('itemForm_' + firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -664,15 +731,27 @@ export default function PengelolaanPengirimanPage() {
     if (!formData.telepon.trim()) {
       newErrors.telepon = 'Nomor Telepon wajib diisi';
     } else if (!/^\+?[0-9]+$/.test(formData.telepon)) {
-      newErrors.telepon = 'Cuma bisa angka';
+      newErrors.telepon = 'Hanya boleh berisi angka';
+    } else {
+      const digits = formData.telepon.trim().replace(/\+/g, '');
+      if (digits.length < 8 || digits.length > 12) {
+        newErrors.telepon = 'Nomor Telepon harus minimal 8 dan maksimal 12 digit';
+      }
     }
     
     if (!formData.namaPenerima.trim()) newErrors.namaPenerima = 'Nama Penerima wajib diisi';
     if (formData.emailPenerima && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailPenerima)) {
       newErrors.emailPenerima = 'Format email tidak valid';
     }
-    if (formData.teleponPenerima && !/^\+?[0-9]+$/.test(formData.teleponPenerima)) {
-      newErrors.teleponPenerima = 'Cuma bisa angka';
+    if (formData.teleponPenerima) {
+      if (!/^\+?[0-9]+$/.test(formData.teleponPenerima)) {
+        newErrors.teleponPenerima = 'Hanya boleh berisi angka';
+      } else {
+        const digits = formData.teleponPenerima.trim().replace(/\+/g, '');
+        if (digits.length < 8 || digits.length > 12) {
+          newErrors.teleponPenerima = 'Nomor Telepon harus minimal 8 dan maksimal 12 digit';
+        }
+      }
     }
     
     if (!formData.asal) newErrors.asal = 'Pelabuhan Asal wajib dipilih';
@@ -681,6 +760,12 @@ export default function PengelolaanPengirimanPage() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstErrorField = Object.keys(newErrors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -1007,6 +1092,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Pengirim <span className="text-rose-500">*</span></label>
                   <input 
                     type="text" 
+                    id="nama"
                     value={formData.nama}
                     onChange={e => {
                       setFormData({...formData, nama: e.target.value});
@@ -1024,6 +1110,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email <span className="text-rose-500">*</span></label>
                   <input 
                     type="email" 
+                    id="email"
                     value={formData.email}
                     onChange={e => {
                       setFormData({...formData, email: e.target.value});
@@ -1041,11 +1128,13 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nomor Telepon <span className="text-rose-500">*</span></label>
                   <input 
                     type="text" 
+                    id="telepon"
                     value={formData.telepon}
                     onChange={e => {
                       setFormData({...formData, telepon: e.target.value});
                       if (errors.telepon) setErrors({...errors, telepon: ''});
                     }}
+                    placeholder="Contoh: 08123456789 (8-12 digit)"
                     className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
                       errors.telepon 
                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
@@ -1060,6 +1149,7 @@ export default function PengelolaanPengirimanPage() {
                     type="text" 
                     value={formData.alamatPengirim}
                     onChange={e => setFormData({...formData, alamatPengirim: e.target.value})}
+                    placeholder="Contoh: Jl. Merdeka No. 123, Jakarta"
                     className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
                   />
                 </div>
@@ -1077,6 +1167,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Penerima <span className="text-rose-500">*</span></label>
                   <input 
                     type="text" 
+                    id="namaPenerima"
                     value={formData.namaPenerima}
                     onChange={e => {
                       setFormData({...formData, namaPenerima: e.target.value});
@@ -1094,6 +1185,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email</label>
                   <input 
                     type="email" 
+                    id="emailPenerima"
                     value={formData.emailPenerima}
                     onChange={e => {
                       setFormData({...formData, emailPenerima: e.target.value});
@@ -1111,11 +1203,13 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nomor Telepon</label>
                   <input 
                     type="text" 
+                    id="teleponPenerima"
                     value={formData.teleponPenerima}
                     onChange={e => {
                       setFormData({...formData, teleponPenerima: e.target.value});
                       if (errors.teleponPenerima) setErrors({...errors, teleponPenerima: ''});
                     }}
+                    placeholder="Contoh: 08123456789 (8-12 digit)"
                     className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
                       errors.teleponPenerima 
                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
@@ -1130,6 +1224,7 @@ export default function PengelolaanPengirimanPage() {
                     type="text" 
                     value={formData.alamatPenerima}
                     onChange={e => setFormData({...formData, alamatPenerima: e.target.value})}
+                    placeholder="Contoh: Jl. Sudirman No. 45, Surabaya"
                     className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
                   />
                 </div>
@@ -1147,6 +1242,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Pelabuhan Asal <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <select 
+                      id="asal"
                       value={formData.asal}
                       onChange={e => {
                         setFormData({...formData, asal: e.target.value});
@@ -1173,6 +1269,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Pelabuhan Tujuan <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <select 
+                      id="tujuan"
                       value={formData.tujuan}
                       onChange={e => {
                         setFormData({...formData, tujuan: e.target.value});
@@ -1199,6 +1296,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Tanggal <span className="text-rose-500">*</span></label>
                   <input 
                     type="date" 
+                    id="tanggal"
                     value={formData.tanggal}
                     onChange={e => {
                       setFormData({...formData, tanggal: e.target.value});
@@ -1243,6 +1341,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Berat Barang (kg) *</label>
                   <input 
                     type="text" 
+                    id="itemForm_berat"
                     value={itemForm.berat}
                     onChange={e => {
                       setItemForm({...itemForm, berat: e.target.value});
@@ -1261,6 +1360,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Volume Barang (m³)</label>
                   <input 
                     type="text" 
+                    id="itemForm_volume"
                     value={itemForm.volume}
                     onChange={e => {
                       setItemForm({...itemForm, volume: e.target.value});
@@ -1279,6 +1379,7 @@ export default function PengelolaanPengirimanPage() {
                   <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Deskripsi Kargo/Barang *</label>
                   <input 
                     type="text" 
+                    id="itemForm_deskripsi"
                     value={itemForm.deskripsi}
                     onChange={e => {
                       setItemForm({...itemForm, deskripsi: e.target.value});
@@ -1347,8 +1448,8 @@ export default function PengelolaanPengirimanPage() {
                 )}
               </div>
 
-              <div className="border border-white/5 rounded-md overflow-hidden">
-                <table className="w-full text-left border-collapse font-mono text-xs">
+              <div className="border border-white/5 rounded-md overflow-x-auto">
+                <table className="w-full text-left border-collapse font-mono text-xs min-w-[600px]">
                   <thead>
                     <tr className="bg-white/5 text-gray-300 font-bold border-b border-white/5">
                       <th className="px-4 py-3">No</th>
@@ -1465,7 +1566,7 @@ export default function PengelolaanPengirimanPage() {
       {activeTab === 'kelola' && (
         <div className="space-y-6 mb-20 animate-in fade-in duration-300">
           
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-[#151922] border border-white/5 rounded-lg p-5">
               <h4 className="text-gray-400 text-[10px] font-mono mb-2">Total Permintaan</h4>
               {loading ? <div className="h-6 w-10 bg-white/5 animate-pulse rounded" /> : <span className="text-2xl font-bold text-white font-mono">{requests.length}</span>}
@@ -1478,6 +1579,8 @@ export default function PengelolaanPengirimanPage() {
               <h4 className="text-gray-400 text-[10px] font-mono mb-2">Disetujui</h4>
               {loading ? <div className="h-6 w-10 bg-white/5 animate-pulse rounded" /> : <span className="text-2xl font-bold text-blue-500 font-mono">{approvedCount}</span>}
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div className="bg-[#151922] border border-white/5 rounded-lg p-5">
               <h4 className="text-gray-400 text-[10px] font-mono mb-2">Dalam Perjalanan</h4>
               {loading ? <div className="h-6 w-10 bg-white/5 animate-pulse rounded" /> : <span className="text-2xl font-bold text-cyan-500 font-mono">{inTransitCount}</span>}
@@ -1600,6 +1703,14 @@ export default function PengelolaanPengirimanPage() {
                             className="bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-colors shadow-[0_0_10px_rgba(14,165,233,0.1)]"
                           >
                             Kirim
+                          </button>
+                        )}
+                        {(req.status === 'Dalam Perjalanan' || req.status === 'Kirim') && (
+                          <button 
+                            onClick={() => handleSelesai(req)}
+                            className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-colors shadow-[0_0_10px_rgba(16,185,129,0.1)]"
+                          >
+                            Selesai
                           </button>
                         )}
                         {req.status === 'Menunggu Persetujuan' && (

@@ -105,7 +105,12 @@ export default function ProfilPage() {
     if (!formData.no_telepon?.trim()) {
       newErrors.no_telepon = 'No. Telepon wajib diisi';
     } else if (!/^\+?[0-9]+$/.test(formData.no_telepon)) {
-      newErrors.no_telepon = 'Cuma bisa angka';
+      newErrors.no_telepon = 'Hanya boleh berisi angka';
+    } else {
+      const digits = formData.no_telepon.trim().replace(/\+/g, '');
+      if (digits.length < 8 || digits.length > 12) {
+        newErrors.no_telepon = 'No. Telepon harus minimal 8 dan maksimal 12 digit';
+      }
     }
     
     if (!formData.alamat?.trim()) newErrors.alamat = 'Alamat wajib diisi';
@@ -113,6 +118,12 @@ export default function ProfilPage() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstErrorField = Object.keys(newErrors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -192,6 +203,12 @@ export default function ProfilPage() {
 
     if (Object.keys(newPassErrors).length > 0) {
       setPasswordErrors(newPassErrors);
+      const firstErrorField = Object.keys(newPassErrors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -401,6 +418,7 @@ export default function ProfilPage() {
                 <input 
                   type="text" 
                   name="nama_lengkap"
+                  id="nama_lengkap"
                   value={formData.nama_lengkap || ''}
                   onChange={e => {
                     handleChange(e);
@@ -420,6 +438,7 @@ export default function ProfilPage() {
                 <input 
                   type="email" 
                   name="email"
+                  id="email"
                   value={formData.email || ''}
                   onChange={e => {
                     handleChange(e);
@@ -439,11 +458,13 @@ export default function ProfilPage() {
                 <input 
                   type="text" 
                   name="no_telepon"
+                  id="no_telepon"
                   value={formData.no_telepon || ''}
                   onChange={e => {
                     handleChange(e);
                     if (errors.no_telepon) setErrors({...errors, no_telepon: ''});
                   }}
+                  placeholder="Contoh: 08123456789 (8-12 digit)"
                   className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
                     errors.no_telepon 
                       ? 'border-red-500 focus:border-red-500' 
@@ -458,11 +479,13 @@ export default function ProfilPage() {
                 <input 
                   type="text" 
                   name="alamat"
+                  id="alamat"
                   value={formData.alamat || ''}
                   onChange={e => {
                     handleChange(e);
                     if (errors.alamat) setErrors({...errors, alamat: ''});
                   }}
+                  placeholder="Contoh: Jl. Merdeka No. 123, Jakarta"
                   className={`w-full bg-[#1e1a2b] border rounded px-3 py-2 text-sm text-white focus:outline-none transition-colors ${
                     errors.alamat 
                       ? 'border-red-500 focus:border-red-500' 
@@ -477,6 +500,7 @@ export default function ProfilPage() {
                 <input 
                   type="text" 
                   name="perusahaan"
+                  id="perusahaan"
                   value={formData.perusahaan || ''}
                   onChange={e => {
                     handleChange(e);
@@ -531,6 +555,7 @@ export default function ProfilPage() {
                 <label className="block text-xs text-gray-400 mb-1 font-mono">Password Lama</label>
                 <input 
                   type="password" 
+                  id="oldPassword"
                   value={passwordForm.oldPassword}
                   onChange={e => {
                     setPasswordForm({ ...passwordForm, oldPassword: e.target.value });
@@ -550,6 +575,7 @@ export default function ProfilPage() {
                 <label className="block text-xs text-gray-400 mb-1 font-mono">Password Baru</label>
                 <input 
                   type="password" 
+                  id="newPassword"
                   value={passwordForm.newPassword}
                   onChange={e => {
                     setPasswordForm({ ...passwordForm, newPassword: e.target.value });
@@ -569,6 +595,7 @@ export default function ProfilPage() {
                 <label className="block text-xs text-gray-400 mb-1 font-mono">Ulangi Password Baru</label>
                 <input 
                   type="password" 
+                  id="confirmNewPassword"
                   value={passwordForm.confirmNewPassword}
                   onChange={e => {
                     setPasswordForm({ ...passwordForm, confirmNewPassword: e.target.value });

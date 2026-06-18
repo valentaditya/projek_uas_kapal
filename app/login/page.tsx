@@ -55,6 +55,12 @@ export default function LoginPage() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstErrorField = Object.keys(newErrors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -81,18 +87,33 @@ export default function LoginPage() {
 
     if (error || !userData) {
       setErrors({ email: 'Username/Email tidak terdaftar' });
+      const element = document.getElementById('email');
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       Swal.close();
       return;
     }
 
     if (userData.password !== password) {
       setErrors({ password: 'Password yang Anda masukkan salah' });
+      const element = document.getElementById('password');
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       Swal.close();
       return;
     }
 
     if (userData.status !== 'Aktif') {
       setErrors({ email: 'Status akun Anda tidak aktif' });
+      const element = document.getElementById('email');
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       Swal.close();
       return;
     }
@@ -136,9 +157,14 @@ export default function LoginPage() {
     }
     
     if (!registerForm.phone.trim()) {
-      newRegErrors.phone = 'No Telepon wajib diisi';
+      newRegErrors.phone = 'No. Telepon wajib diisi';
     } else if (!/^\+?[0-9]+$/.test(registerForm.phone)) {
-      newRegErrors.phone = 'Cuma bisa angka';
+      newRegErrors.phone = 'Hanya boleh berisi angka';
+    } else {
+      const digits = registerForm.phone.trim().replace(/\+/g, '');
+      if (digits.length < 8 || digits.length > 12) {
+        newRegErrors.phone = 'No. Telepon harus minimal 8 dan maksimal 12 digit';
+      }
     }
     
     if (!registerForm.password.trim()) {
@@ -155,6 +181,19 @@ export default function LoginPage() {
 
     if (Object.keys(newRegErrors).length > 0) {
       setRegErrors(newRegErrors);
+      const firstErrorField = Object.keys(newRegErrors)[0];
+      let idStr = firstErrorField;
+      if (firstErrorField === 'username') idStr = 'username_reg';
+      else if (firstErrorField === 'email') idStr = 'email_reg';
+      else if (firstErrorField === 'phone') idStr = 'reg_telepon';
+      else if (firstErrorField === 'password') idStr = 'password_reg';
+      else if (firstErrorField === 'repassword') idStr = 'repassword_reg';
+
+      const element = document.getElementById(idStr);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -193,6 +232,11 @@ export default function LoginPage() {
         username: 'Username atau Email sudah terdaftar',
         email: 'Username atau Email sudah terdaftar'
       });
+      const element = document.getElementById('username_reg');
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       Swal.close();
       return;
     }
@@ -442,7 +486,7 @@ export default function LoginPage() {
                       className={`w-full bg-[#181625] border rounded-md py-3.5 pr-3.5 pl-10 text-sm font-mono text-gray-200 focus:outline-none transition-colors placeholder:text-gray-600 focus:shadow-[0_0_15px_rgba(34,211,238,0.15)] ${
                         regErrors.phone ? 'border-red-500' : 'border-[#2d2843] group-focus-within:border-cyan-500/50'
                       }`}
-                      placeholder="+62 812-3456-7890"
+                      placeholder="Contoh: 08123456789 (8-12 digit)"
                     />
                   </div>
                   {regErrors.phone && <p className="text-red-500 text-xs mt-1 font-mono">{regErrors.phone}</p>}

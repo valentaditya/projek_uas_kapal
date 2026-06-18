@@ -116,6 +116,12 @@ export default function KirimPaketPage() {
 
     if (Object.keys(newItemErrors).length > 0) {
       setItemErrors(newItemErrors);
+      const firstErrorField = Object.keys(newItemErrors)[0];
+      const element = document.getElementById('itemForm_' + firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -215,15 +221,27 @@ export default function KirimPaketPage() {
     if (!formData.telepon.trim()) {
       newErrors.telepon = 'Nomor Telepon wajib diisi';
     } else if (!/^\+?[0-9]+$/.test(formData.telepon)) {
-      newErrors.telepon = 'Cuma bisa angka';
+      newErrors.telepon = 'Hanya boleh berisi angka';
+    } else {
+      const digits = formData.telepon.trim().replace(/\+/g, '');
+      if (digits.length < 8 || digits.length > 12) {
+        newErrors.telepon = 'Nomor Telepon harus minimal 8 dan maksimal 12 digit';
+      }
     }
     
     if (!formData.namaPenerima.trim()) newErrors.namaPenerima = 'Nama Penerima wajib diisi';
     if (formData.emailPenerima && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailPenerima)) {
       newErrors.emailPenerima = 'Format email tidak valid';
     }
-    if (formData.teleponPenerima && !/^\+?[0-9]+$/.test(formData.teleponPenerima)) {
-      newErrors.teleponPenerima = 'Cuma bisa angka';
+    if (formData.teleponPenerima) {
+      if (!/^\+?[0-9]+$/.test(formData.teleponPenerima)) {
+        newErrors.teleponPenerima = 'Hanya boleh berisi angka';
+      } else {
+        const digits = formData.teleponPenerima.trim().replace(/\+/g, '');
+        if (digits.length < 8 || digits.length > 12) {
+          newErrors.teleponPenerima = 'Nomor Telepon harus minimal 8 dan maksimal 12 digit';
+        }
+      }
     }
     
     if (!formData.asal) newErrors.asal = 'Pelabuhan Asal wajib dipilih';
@@ -232,6 +250,12 @@ export default function KirimPaketPage() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      const firstErrorField = Object.keys(newErrors)[0];
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -476,6 +500,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Pengirim <span className="text-rose-500">*</span></label>
               <input 
                 type="text" 
+                id="nama"
                 value={formData.nama} 
                 onChange={e => {
                   setFormData({...formData, nama: e.target.value});
@@ -493,6 +518,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email <span className="text-rose-500">*</span></label>
               <input 
                 type="email" 
+                id="email"
                 value={formData.email} 
                 onChange={e => {
                   setFormData({...formData, email: e.target.value});
@@ -510,11 +536,13 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nomor Telepon <span className="text-rose-500">*</span></label>
               <input 
                 type="text" 
+                id="telepon"
                 value={formData.telepon} 
                 onChange={e => {
                   setFormData({...formData, telepon: e.target.value});
                   if (errors.telepon) setErrors({...errors, telepon: ''});
                 }}
+                placeholder="Contoh: 08123456789 (8-12 digit)"
                 className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
                   errors.telepon 
                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
@@ -529,6 +557,7 @@ export default function KirimPaketPage() {
                 type="text" 
                 value={formData.alamatPengirim} 
                 onChange={e => setFormData({...formData, alamatPengirim: e.target.value})}
+                placeholder="Contoh: Jl. Merdeka No. 123, Jakarta"
                 className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
               />
             </div>
@@ -546,6 +575,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nama Penerima <span className="text-rose-500">*</span></label>
               <input 
                 type="text" 
+                id="namaPenerima"
                 value={formData.namaPenerima}
                 onChange={e => {
                   setFormData({...formData, namaPenerima: e.target.value});
@@ -563,6 +593,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Email</label>
               <input 
                 type="email" 
+                id="emailPenerima"
                 value={formData.emailPenerima}
                 onChange={e => {
                   setFormData({...formData, emailPenerima: e.target.value});
@@ -580,11 +611,13 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Nomor Telepon</label>
               <input 
                 type="text" 
+                id="teleponPenerima"
                 value={formData.teleponPenerima}
                 onChange={e => {
                   setFormData({...formData, teleponPenerima: e.target.value});
                   if (errors.teleponPenerima) setErrors({...errors, teleponPenerima: ''});
                 }}
+                placeholder="Contoh: 08123456789 (8-12 digit)"
                 className={`w-full bg-[#1b202c] border rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:ring-1 placeholder-gray-600 font-mono tracking-tight ${
                   errors.teleponPenerima 
                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
@@ -599,6 +632,7 @@ export default function KirimPaketPage() {
                 type="text" 
                 value={formData.alamatPenerima}
                 onChange={e => setFormData({...formData, alamatPenerima: e.target.value})}
+                placeholder="Contoh: Jl. Sudirman No. 45, Surabaya"
                 className="w-full bg-[#1b202c] border border-white/5 rounded-md px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#b06aee]/50 focus:ring-1 focus:ring-[#b06aee]/50 placeholder-gray-600 font-mono tracking-tight" 
               />
             </div>
@@ -616,6 +650,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Pelabuhan Asal <span className="text-rose-500">*</span></label>
               <div className="relative">
                 <select 
+                  id="asal"
                   value={formData.asal}
                   onChange={e => {
                     setFormData({...formData, asal: e.target.value});
@@ -642,6 +677,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Pelabuhan Tujuan <span className="text-rose-500">*</span></label>
               <div className="relative">
                 <select 
+                  id="tujuan"
                   value={formData.tujuan}
                   onChange={e => {
                     setFormData({...formData, tujuan: e.target.value});
@@ -668,6 +704,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Tanggal Pengiriman <span className="text-rose-500">*</span></label>
               <input 
                 type="date" 
+                id="tanggal"
                 value={formData.tanggal}
                 onChange={e => {
                   setFormData({...formData, tanggal: e.target.value});
@@ -712,6 +749,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Berat Barang (kg) <span className="text-rose-500">*</span></label>
               <input 
                 type="text" 
+                id="itemForm_berat"
                 value={itemForm.berat}
                 onChange={e => {
                   setItemForm({...itemForm, berat: e.target.value});
@@ -730,6 +768,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Volume Barang (m³)</label>
               <input 
                 type="text" 
+                id="itemForm_volume"
                 value={itemForm.volume}
                 onChange={e => {
                   setItemForm({...itemForm, volume: e.target.value});
@@ -748,6 +787,7 @@ export default function KirimPaketPage() {
               <label className="block text-xs font-bold text-gray-300 mb-2 font-mono">Deskripsi Kargo/Barang <span className="text-rose-500">*</span></label>
               <input 
                 type="text" 
+                id="itemForm_deskripsi"
                 value={itemForm.deskripsi}
                 onChange={e => {
                   setItemForm({...itemForm, deskripsi: e.target.value});
@@ -817,8 +857,8 @@ export default function KirimPaketPage() {
             )}
           </div>
 
-          <div className="border border-white/5 rounded-md overflow-hidden">
-            <table className="w-full text-left border-collapse font-mono text-xs">
+          <div className="border border-white/5 rounded-md overflow-x-auto">
+            <table className="w-full text-left border-collapse font-mono text-xs min-w-[600px]">
               <thead>
                 <tr className="bg-white/5 text-gray-300 font-bold border-b border-white/5">
                   <th className="px-4 py-3">No</th>
