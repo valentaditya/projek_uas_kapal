@@ -5,6 +5,7 @@ import {
   MapPinIcon,
   PaperAirplaneIcon,
   EyeIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline';
 import { createClient } from '@/utils/supabase/client';
 import Swal from 'sweetalert2';
@@ -62,8 +63,8 @@ export default function ManajemenRutePage() {
           const ship = vesselNames[idx % vesselNames.length];
 
           const firstShipment = chunk[0];
-          const origin = firstShipment.pelabuhan_asal || 'Pelabuhan Tidak Diketahui';
-          const destination = firstShipment.pelabuhan_tujuan || 'Pelabuhan Tidak Diketahui';
+          const origin = firstShipment.pelabuhan_asal || 'Unknown Port';
+          const destination = firstShipment.pelabuhan_tujuan || 'Unknown Port';
           
           return {
             ship,
@@ -100,7 +101,7 @@ export default function ManajemenRutePage() {
           <p style="margin: 3px 0;"><strong>Route ID:</strong> <span style="font-family: monospace;">${route.routeId}</span></p>
           <p style="margin: 3px 0;"><strong>Rute Utama:</strong> ${route.origin} &rarr; ${route.destination}</p>
           <p style="margin: 3px 0;"><strong>Jarak / Durasi:</strong> ${route.distance} / ${route.duration}</p>
-          <p style="margin: 3px 0;"><strong>Status Rute:</strong> <span style="color: #10b981;">${route.status === 'ACTIVE' ? 'AKTIF' : route.status}</span></p>
+          <p style="margin: 3px 0;"><strong>Status Rute:</strong> <span style="color: #10b981;">${route.status}</span></p>
         </div>
         <div>
           <h4 style="font-weight: bold; color: #ffffff; margin: 0 0 8px 0; font-size: 14px;">Daftar Pengiriman (5 Paket)</h4>
@@ -136,6 +137,73 @@ export default function ManajemenRutePage() {
       confirmButtonColor: '#a855f7',
       confirmButtonText: 'Tutup'
     });
+  };
+
+  const handleCompleteRoute = async (route: any) => {
+    const confirmResult = await Swal.fire({
+      title: 'Konfirmasi Rute Selesai',
+      text: `Apakah Anda yakin ingin menyelesaikan rute ini? Semua paket (${route.shipments.length} paket) di kapal ${route.ship} akan diubah statusnya menjadi Terkirim.`,
+      icon: 'question',
+      background: '#151922',
+      color: '#ffffff',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#374151',
+      confirmButtonText: 'Ya, Selesai',
+      cancelButtonText: 'Batal',
+      theme: 'dark'
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    Swal.fire({
+      title: 'Memproses...',
+      allowOutsideClick: false,
+      theme: 'dark',
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    try {
+      const supabase = createClient();
+      const shipmentIds = route.shipments.map((s: any) => s.id);
+
+      const { error } = await supabase
+        .from('pengiriman')
+        .update({ status: 'Terkirim' })
+        .in('id', shipmentIds);
+
+      if (error) throw error;
+
+      // Insert notifications for all shipments in this route
+      const notifications = route.shipments.map((s: any) => ({
+        title: 'Pengiriman Selesai',
+        message: `Pengiriman dengan Resi ${s.nomor_resi || `AO-${s.id}`} telah selesai & terkirim ke tujuan.`,
+        icon: 'CheckIcon',
+        icon_color: 'text-green-500'
+      }));
+
+      await supabase.from('notifikasi').insert(notifications);
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: `Rute selesai! Status ${route.shipments.length} paket telah diubah menjadi Terkirim.`,
+        confirmButtonColor: '#10b981',
+        theme: 'dark'
+      });
+
+      fetchRoutes();
+    } catch (err: any) {
+      console.error(err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        theme: 'dark',
+        text: err.message || 'Terjadi kesalahan saat menyelesaikan rute.'
+      });
+    }
   };
 
   return (
@@ -223,7 +291,7 @@ export default function ManajemenRutePage() {
                   </div>
                   
                   <div className={`px-2.5 py-1.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#3b82f6]/10 text-[#3b82f6]`}>
-                    {route.status === 'ACTIVE' ? 'AKTIF' : route.status}
+                    {route.status}
                   </div>
                 </div>
 
@@ -231,7 +299,7 @@ export default function ManajemenRutePage() {
                   <div className="flex gap-2 items-start md:col-span-2">
                     <MapPinIcon className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] text-gray-500 mb-1">Asal</p>
+                      <p className="text-[10px] text-gray-500 mb-1">Origin</p>
                       <p className="text-gray-200 font-bold text-sm tracking-wide">{route.origin}</p>
                     </div>
                   </div>
@@ -239,23 +307,23 @@ export default function ManajemenRutePage() {
                   <div className="flex gap-2 items-start">
                     <PaperAirplaneIcon className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] text-gray-500 mb-1">Tujuan</p>
+                      <p className="text-[10px] text-gray-500 mb-1">Destination</p>
                       <p className="text-gray-200 font-bold text-sm tracking-wide">{route.destination}</p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-[10px] text-gray-500 mb-1">Jarak</p>
+                    <p className="text-[10px] text-gray-500 mb-1">Distance</p>
                     <p className="text-gray-200 font-bold text-xs">{route.distance}</p>
                   </div>
                   
                   <div>
-                    <p className="text-[10px] text-gray-500 mb-1">Durasi</p>
+                    <p className="text-[10px] text-gray-500 mb-1">Duration</p>
                     <p className="text-gray-200 font-bold text-xs">{route.duration}</p>
                   </div>
                   
                   <div>
-                    <p className="text-[10px] text-gray-500 mb-1">Titik Jalan</p>
+                    <p className="text-[10px] text-gray-500 mb-1">Waypoints</p>
                     <p className="text-gray-200 font-bold text-xs">{route.waypoints}</p>
                   </div>
                 </div>
@@ -263,10 +331,16 @@ export default function ManajemenRutePage() {
 
               <div className="border-t border-white/5 px-6 py-4 flex justify-end gap-3 mt-auto">
                 <button 
+                  onClick={() => handleCompleteRoute(route)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-bold rounded transition-colors tracking-wide"
+                >
+                  <CheckIcon className="w-3.5 h-3.5" /> Selesai
+                </button>
+                <button 
                   onClick={() => handleViewRoute(route)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-[#1c1825] border border-[#b06aee]/30 text-[#b06aee] hover:bg-[#b06aee]/20 text-[11px] font-bold rounded transition-colors tracking-wide"
                 >
-                  <EyeIcon className="w-3.5 h-3.5" /> Lihat
+                  <EyeIcon className="w-3.5 h-3.5" /> View
                 </button>
               </div>
             </div>
