@@ -74,7 +74,7 @@ export default function ManajemenRutePage() {
             distance: '1,200 nm',
             duration: '72 hrs',
             waypoints: 3,
-            status: 'ACTIVE',
+            status: 'AKTIF',
             shipments: chunk
           };
         });
@@ -299,7 +299,7 @@ export default function ManajemenRutePage() {
                   <div className="flex gap-2 items-start md:col-span-2">
                     <MapPinIcon className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] text-gray-500 mb-1">Origin</p>
+                      <p className="text-[10px] text-gray-500 mb-1">Asal</p>
                       <p className="text-gray-200 font-bold text-sm tracking-wide">{route.origin}</p>
                     </div>
                   </div>
@@ -307,23 +307,23 @@ export default function ManajemenRutePage() {
                   <div className="flex gap-2 items-start">
                     <PaperAirplaneIcon className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-[10px] text-gray-500 mb-1">Destination</p>
+                      <p className="text-[10px] text-gray-500 mb-1">Tujuan</p>
                       <p className="text-gray-200 font-bold text-sm tracking-wide">{route.destination}</p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-[10px] text-gray-500 mb-1">Distance</p>
+                    <p className="text-[10px] text-gray-500 mb-1">Jarak</p>
                     <p className="text-gray-200 font-bold text-xs">{route.distance}</p>
                   </div>
                   
                   <div>
-                    <p className="text-[10px] text-gray-500 mb-1">Duration</p>
+                    <p className="text-[10px] text-gray-500 mb-1">Durasi</p>
                     <p className="text-gray-200 font-bold text-xs">{route.duration}</p>
                   </div>
                   
                   <div>
-                    <p className="text-[10px] text-gray-500 mb-1">Waypoints</p>
+                    <p className="text-[10px] text-gray-500 mb-1">Titik Tujuan</p>
                     <p className="text-gray-200 font-bold text-xs">{route.waypoints}</p>
                   </div>
                 </div>
@@ -340,7 +340,7 @@ export default function ManajemenRutePage() {
                   onClick={() => handleViewRoute(route)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-[#1c1825] border border-[#b06aee]/30 text-[#b06aee] hover:bg-[#b06aee]/20 text-[11px] font-bold rounded transition-colors tracking-wide"
                 >
-                  <EyeIcon className="w-3.5 h-3.5" /> View
+                  <EyeIcon className="w-3.5 h-3.5" /> Lihat
                 </button>
               </div>
             </div>

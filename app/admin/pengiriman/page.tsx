@@ -1594,7 +1594,7 @@ export default function PengelolaanPengirimanPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-wrap gap-3">
               {[
-                { label: 'ALL', count: requests.length, value: 'ALL' },
+                { label: 'semua', count: requests.length, value: 'ALL' },
                 { label: 'Menunggu Persetujuan', count: pendingCount, value: 'Menunggu Persetujuan' },
                 { label: 'Disetujui', count: approvedCount, value: 'Disetujui' },
                 { label: 'Dalam Perjalanan', count: inTransitCount, value: 'Dalam Perjalanan' },

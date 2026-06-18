@@ -374,11 +374,11 @@ export default function KelolaKapalPage() {
                   <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.tujuan}</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] text-gray-400">
-                  <span>Region:</span>
+                  <span>Negara:</span>
                   <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.region}</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] text-gray-400">
-                  <span>Fuel:</span>
+                  <span>Bahan Bakar:</span>
                   <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.fuel}</span>
                 </div>
               </div>

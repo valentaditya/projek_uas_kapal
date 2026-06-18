@@ -228,7 +228,7 @@ export default function DashboardPage() {
                 <div className="flex justify-between items-center text-[11px] text-gray-400">
                   <div className="flex items-center gap-2">
                     <BoltIcon className="w-3.5 h-3.5 shrink-0" />
-                    <span>Fuel:</span>
+                    <span>Bahan Bakar:</span>
                   </div>
                   <span className="text-gray-200 font-mono tracking-tight font-medium">{ship.fuel_kapal ?? 0} %</span>
                 </div>
